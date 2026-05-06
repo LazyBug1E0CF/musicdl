@@ -21,6 +21,7 @@ class TaskStatus(str, Enum):
 @dataclass
 class TaskArtifact:
     relative_path: str
+    absolute_path: str
     filename: str
     size: int
 
@@ -96,7 +97,12 @@ class TaskRegistry:
             rel = str(p.relative_to(base))
         except ValueError:
             rel = str(p)
-        artifact = TaskArtifact(relative_path=rel, filename=p.name, size=p.stat().st_size if p.exists() else 0)
+        artifact = TaskArtifact(
+            relative_path=rel,
+            absolute_path=str(p),
+            filename=p.name,
+            size=p.stat().st_size if p.exists() else 0,
+        )
         task = await self.update_task(task_id)
         task.artifacts.append(artifact)
 
@@ -115,13 +121,15 @@ class TaskRegistry:
             task = self._tasks.pop(tid)
             self._events.pop(tid, None)
             for art in task.artifacts:
-                art_path = Path(art.relative_path)
+                art_path = Path(art.absolute_path)
                 try:
                     os.remove(art_path)
                 except OSError:
                     pass
             # Best-effort cleanup of temp dirs produced by downloads.
             if task.artifacts:
-                parent = Path(task.artifacts[0].relative_path).parent
-                if parent and parent != Path('.'):
-                    shutil.rmtree(parent, ignore_errors=True)
+                parents = {Path(art.absolute_path).parent for art in task.artifacts}
+                if len(parents) == 1:
+                    parent = next(iter(parents))
+                    if parent.exists() and parent != Path(parent.anchor):
+                        shutil.rmtree(parent, ignore_errors=True)
