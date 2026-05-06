@@ -80,16 +80,31 @@ def resolve_playback(
     include_lyric: bool = False,
 ) -> dict[str, Any]:
     sid = _extract_song_id(song_id, song_url)
+    module_cfg = {"type": source}
+    client = BuildMusicClient(module_cfg=module_cfg)
+
+    def _resolve_from_identifier() -> Optional[SongInfo]:
+        if not sid:
+            return None
+        resolved_candidates = client.search(keyword=sid, num_threadings=1, request_overrides=_build_request_overrides(source))
+        for candidate in resolved_candidates:
+            if str(getattr(candidate, "identifier", "")) == str(sid):
+                return candidate
+        return resolved_candidates[0] if resolved_candidates else None
+
     if song_info:
         song = SongInfo.fromdict(song_info)
         if not song.source:
             song.source = source
         if not song.identifier:
             song.identifier = sid
+        if (not song.with_valid_download_url) or (song.ext is None):
+            resolved_song = _resolve_from_identifier()
+            if resolved_song is not None:
+                song = resolved_song
     else:
-        song = SongInfo(source=source, identifier=sid)
+        song = _resolve_from_identifier() or SongInfo(source=source, identifier=sid)
 
-    client = BuildMusicClient(source=source)
     overrides = _build_request_overrides(source)
     downloaded = client.download([song], request_overrides=overrides, auto_supplement_song=True)
     if not downloaded:
