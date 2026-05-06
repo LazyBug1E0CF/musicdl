@@ -33,7 +33,8 @@ async def _run_download(task_id: str, payload: DownloadRequest):
     await registry.update_task(task_id, status=TaskStatus.RUNNING)
     try:
         music_client = MusicDL(music_sources=payload.music_sources)
-        song_infos = music_client.search(
+        song_infos = await asyncio.to_thread(
+            music_client.search,
             keyword=payload.keyword,
             playlist_url=payload.playlist_url,
             search_size_per_source=payload.search_size_per_source,
@@ -41,7 +42,7 @@ async def _run_download(task_id: str, payload: DownloadRequest):
         await registry.update_task(task_id, total=len(song_infos))
         for idx, song in enumerate(song_infos, start=1):
             try:
-                music_client.download([song], work_dir=payload.work_dir)
+                await asyncio.to_thread(music_client.download, [song], work_dir=payload.work_dir)
                 save_path = getattr(song, "save_path", None)
                 if save_path and Path(save_path).exists():
                     await registry.add_artifact(task_id, save_path, payload.work_dir)

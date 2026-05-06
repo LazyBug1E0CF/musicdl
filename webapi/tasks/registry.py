@@ -90,8 +90,12 @@ class TaskRegistry:
         task.logs.append(msg)
 
     async def add_artifact(self, task_id: str, path: str, base_dir: str):
-        p = Path(path)
-        rel = str(p.relative_to(base_dir)) if str(p).startswith(str(base_dir)) else p.name
+        p = Path(path).resolve()
+        base = Path(base_dir).resolve()
+        try:
+            rel = str(p.relative_to(base))
+        except ValueError:
+            rel = str(p)
         artifact = TaskArtifact(relative_path=rel, filename=p.name, size=p.stat().st_size if p.exists() else 0)
         task = await self.update_task(task_id)
         task.artifacts.append(artifact)
@@ -101,7 +105,7 @@ class TaskRegistry:
         async with event:
             try:
                 await asyncio.wait_for(event.wait(), timeout=timeout)
-            except TimeoutError:
+            except asyncio.TimeoutError:
                 pass
 
     def _cleanup_expired_locked(self):
@@ -111,8 +115,9 @@ class TaskRegistry:
             task = self._tasks.pop(tid)
             self._events.pop(tid, None)
             for art in task.artifacts:
+                art_path = Path(art.relative_path)
                 try:
-                    os.remove(art.relative_path)
+                    os.remove(art_path)
                 except OSError:
                     pass
             # Best-effort cleanup of temp dirs produced by downloads.
