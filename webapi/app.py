@@ -83,15 +83,23 @@ def sanitize_filename(name: str) -> str:
     return cleaned[:128]
 
 
+def _is_within_base(base: Path, candidate: Path) -> bool:
+    try:
+        candidate.relative_to(base)
+        return True
+    except ValueError:
+        return False
+
+
 def safe_download_path(subdir: str, filename: str) -> Path:
     base = DOWNLOAD_ROOT
     target_dir = (base / subdir).resolve()
-    if not str(target_dir).startswith(str(base)):
+    if not _is_within_base(base, target_dir):
         raise HTTPException(status_code=400, detail="invalid download directory")
     target_dir.mkdir(parents=True, exist_ok=True)
     safe_name = sanitize_filename(filename)
     candidate = (target_dir / safe_name).resolve()
-    if not str(candidate).startswith(str(base)):
+    if not _is_within_base(base, candidate):
         raise HTTPException(status_code=400, detail="invalid download path")
     return candidate
 
