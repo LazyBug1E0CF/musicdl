@@ -10,6 +10,8 @@ from typing import Any
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 
+from webapi.api.v1.lyrics import router as lyrics_router
+from webapi.api.v1.playback import router as playback_router
 from webapi.schemas.music import (
     ApiError,
     DownloadRequest,
@@ -23,6 +25,9 @@ from webapi.tasks.registry import TaskRegistry, TaskStatus
 
 
 app = FastAPI(title="musicdl webapi", version="1.0.0")
+app.include_router(playback_router)
+app.include_router(lyrics_router)
+
 registry = TaskRegistry(
     max_tasks_per_user=int(os.getenv("MUSICDL_MAX_TASKS_PER_USER", "2")),
     max_tasks_global=int(os.getenv("MUSICDL_MAX_TASKS_GLOBAL", "4")),
