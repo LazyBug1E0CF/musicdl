@@ -21,7 +21,6 @@ class TaskStatus(str, Enum):
 @dataclass
 class TaskArtifact:
     relative_path: str
-    absolute_path: str
     filename: str
     size: int
 
@@ -54,6 +53,7 @@ class TaskRegistry:
         self._max_tasks_per_user = max_tasks_per_user
         self._max_tasks_global = max_tasks_global
         self._ttl_seconds = ttl_seconds
+        self._artifact_paths: dict[str, list[str]] = {}
 
     async def create_task(self, user_id: str, total: int = 0) -> TaskState:
         async with self._lock:
@@ -68,6 +68,7 @@ class TaskRegistry:
             task = TaskState(task_id=task_id, user_id=user_id, total=total)
             self._tasks[task_id] = task
             self._events[task_id] = asyncio.Condition()
+            self._artifact_paths[task_id] = []
             return task
 
     async def get_task(self, task_id: str) -> TaskState | None:
@@ -97,14 +98,10 @@ class TaskRegistry:
             rel = str(p.relative_to(base))
         except ValueError:
             rel = str(p)
-        artifact = TaskArtifact(
-            relative_path=rel,
-            absolute_path=str(p),
-            filename=p.name,
-            size=p.stat().st_size if p.exists() else 0,
-        )
+        artifact = TaskArtifact(relative_path=rel, filename=p.name, size=p.stat().st_size if p.exists() else 0)
         task = await self.update_task(task_id)
         task.artifacts.append(artifact)
+        self._artifact_paths.setdefault(task_id, []).append(str(p))
 
     async def wait_for_change(self, task_id: str, timeout: float = 20.0):
         event = self._events[task_id]
@@ -120,15 +117,16 @@ class TaskRegistry:
         for tid in expired:
             task = self._tasks.pop(tid)
             self._events.pop(tid, None)
-            for art in task.artifacts:
-                art_path = Path(art.absolute_path)
+            artifact_paths = self._artifact_paths.pop(tid, [])
+            for art_path_str in artifact_paths:
+                art_path = Path(art_path_str)
                 try:
                     os.remove(art_path)
                 except OSError:
                     pass
             # Best-effort cleanup of temp dirs produced by downloads.
             if task.artifacts:
-                parents = {Path(art.absolute_path).parent for art in task.artifacts}
+                parents = {Path(p).parent for p in artifact_paths}
                 if len(parents) == 1:
                     parent = next(iter(parents))
                     if parent.exists() and parent != Path(parent.anchor):
