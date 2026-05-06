@@ -35,7 +35,8 @@ class TaskState:
     failed: int = 0
     logs: list[str] = field(default_factory=list)
     artifacts: list[TaskArtifact] = field(default_factory=list)
-    error: str | None = None
+    result: Any | None = None
+    error: Any | None = None
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
 
@@ -88,8 +89,13 @@ class TaskRegistry:
         return task
 
     async def append_log(self, task_id: str, msg: str):
-        task = await self.update_task(task_id)
-        task.logs.append(msg)
+        async with self._lock:
+            task = self._tasks[task_id]
+            task.logs.append(msg)
+            task.updated_at = time.time()
+            event = self._events[task_id]
+        async with event:
+            event.notify_all()
 
     async def add_artifact(self, task_id: str, path: str, base_dir: str):
         p = Path(path).resolve()
@@ -99,9 +105,14 @@ class TaskRegistry:
         except ValueError:
             rel = str(p)
         artifact = TaskArtifact(relative_path=rel, filename=p.name, size=p.stat().st_size if p.exists() else 0)
-        task = await self.update_task(task_id)
-        task.artifacts.append(artifact)
-        self._artifact_paths.setdefault(task_id, []).append(str(p))
+        async with self._lock:
+            task = self._tasks[task_id]
+            task.artifacts.append(artifact)
+            task.updated_at = time.time()
+            self._artifact_paths.setdefault(task_id, []).append(str(p))
+            event = self._events[task_id]
+        async with event:
+            event.notify_all()
 
     async def wait_for_change(self, task_id: str, timeout: float = 20.0):
         event = self._events[task_id]
