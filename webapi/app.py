@@ -3,12 +3,18 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
+import time
 import traceback
+from collections import defaultdict, deque
 from pathlib import Path
-from typing import Any
+from typing import Any, Deque
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from webapi.api.v1.lyrics import router as lyrics_router
 from webapi.api.v1.playback import router as playback_router
@@ -24,7 +30,46 @@ from webapi.services.music_service import MusicService
 from webapi.tasks.registry import TaskRegistry, TaskStatus
 
 
+APP_TIMEOUT_SECONDS = float(os.getenv("APP_TIMEOUT_SECONDS", "30"))
+MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(2 * 1024 * 1024)))
+RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "60"))
+RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
+DOWNLOAD_ROOT = Path(os.getenv("DOWNLOAD_ROOT", "./downloads")).resolve()
+CORS_ALLOW_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173,http://localhost:8080").split(",")
+    if origin.strip()
+]
+SAFE_FILE_CHARS = re.compile(r"[^a-zA-Z0-9._-]+")
+
+
+class InMemoryRateLimiter:
+    def __init__(self, max_requests: int, window_seconds: int):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.buckets: dict[str, Deque[float]] = defaultdict(deque)
+
+    def allow(self, key: str) -> bool:
+        now = time.time()
+        queue = self.buckets[key]
+        while queue and now - queue[0] > self.window_seconds:
+            queue.popleft()
+        if len(queue) >= self.max_requests:
+            return False
+        queue.append(now)
+        return True
+
+
+rate_limiter = InMemoryRateLimiter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
+
 app = FastAPI(title="musicdl webapi", version="1.0.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOW_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
+)
 app.include_router(playback_router)
 app.include_router(lyrics_router)
 
@@ -33,6 +78,64 @@ registry = TaskRegistry(
     max_tasks_global=int(os.getenv("MUSICDL_MAX_TASKS_GLOBAL", "4")),
     ttl_seconds=int(os.getenv("MUSICDL_TASK_TTL_SECONDS", str(24 * 3600))),
 )
+
+
+class MockDownloadRequest(BaseModel):
+    subdir: str = Field(default="default")
+    filename: str
+    content: str = ""
+
+
+@app.middleware("http")
+async def timeout_middleware(request: Request, call_next):
+    try:
+        return await asyncio.wait_for(call_next(request), timeout=APP_TIMEOUT_SECONDS)
+    except TimeoutError:
+        return JSONResponse(status_code=504, content={"detail": "request timeout"})
+
+
+@app.middleware("http")
+async def body_limit_middleware(request: Request, call_next):
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > MAX_BODY_BYTES:
+        return JSONResponse(status_code=413, content={"detail": "request body too large"})
+    return await call_next(request)
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_limiter.allow(client_ip):
+        return JSONResponse(status_code=429, content={"detail": "rate limit exceeded"})
+    return await call_next(request)
+
+
+def sanitize_filename(name: str) -> str:
+    cleaned = SAFE_FILE_CHARS.sub("_", name).strip("._-")
+    if not cleaned:
+        cleaned = "download"
+    return cleaned[:128]
+
+
+def _is_within_base(base: Path, candidate: Path) -> bool:
+    try:
+        candidate.relative_to(base)
+        return True
+    except ValueError:
+        return False
+
+
+def safe_download_path(subdir: str, filename: str) -> Path:
+    base = DOWNLOAD_ROOT
+    target_dir = (base / subdir).resolve()
+    if not _is_within_base(base, target_dir):
+        raise HTTPException(status_code=400, detail="invalid download directory")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = sanitize_filename(filename)
+    candidate = (target_dir / safe_name).resolve()
+    if not _is_within_base(base, candidate):
+        raise HTTPException(status_code=400, detail="invalid download path")
+    return candidate
 
 
 def _song_to_schema(song_info):
@@ -61,6 +164,25 @@ async def http_exception_handler(_, exc: HTTPException):
 async def exception_handler(_, exc: Exception):
     err = ApiError(code="INTERNAL_ERROR", message="internal server error", detail=str(exc))
     return JSONResponse(status_code=500, content={"error": err.model_dump()})
+
+
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+async def readyz():
+    DOWNLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    writable = os.access(DOWNLOAD_ROOT, os.W_OK)
+    return {"status": "ready" if writable else "not-ready", "download_root": str(DOWNLOAD_ROOT)}
+
+
+@app.post("/api/downloads/mock")
+async def create_mock_download(payload: MockDownloadRequest):
+    out_path = safe_download_path(payload.subdir, payload.filename)
+    out_path.write_text(payload.content, encoding="utf-8")
+    return {"saved_to": str(out_path)}
 
 
 @app.get("/api/v1/sources")
@@ -176,3 +298,7 @@ async def stream_task(task_id: str):
             await registry.wait_for_change(task_id)
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+if Path("ui/dist").exists():
+    app.mount("/", StaticFiles(directory="ui/dist", html=True), name="ui")
