@@ -11,7 +11,11 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+node_modules/
+*.tsbuildinfo
 downloads/
+musicdl_outputs/
+test-results/
 eggs/
 .eggs/
 lib/

@@ -5,6 +5,7 @@ from typing import Any, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from webapi.schemas.music import APIConfig
 from webapi.services.playback_service import PLAYBACK_NOT_SUPPORTED, PlaybackError, resolve_playback
 
 router = APIRouter(prefix="/api/v1/playback", tags=["playback"])
@@ -16,6 +17,7 @@ class ResolvePlaybackRequest(BaseModel):
     song_id: Optional[str] = None
     url: Optional[str] = None
     include_lyric: bool = False
+    overrides: APIConfig = Field(default_factory=APIConfig)
 
 
 class ResolvePlaybackResponse(BaseModel):
@@ -34,6 +36,7 @@ def resolve(req: ResolvePlaybackRequest):
             song_url=req.url,
             song_info=req.song_info,
             include_lyric=req.include_lyric,
+            overrides=req.overrides.model_dump(),
         )
     except PlaybackError as exc:
         status = 422 if exc.code == PLAYBACK_NOT_SUPPORTED else 400

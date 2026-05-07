@@ -6,7 +6,7 @@ docker compose up -d --build
 ```
 
 访问：
-- UI: `http://localhost:8080`
+- UI: `http://localhost:8080`（React WebUI，支持搜索、播放、下载和下载任务进度）
 - API: `http://localhost:8000`
 - 健康检查: `GET /healthz`
 - 就绪检查: `GET /readyz`
@@ -20,12 +20,18 @@ uvicorn webapi.app:app --reload --port 8000
 ```
 
 ### UI
-当前示例使用静态构建产物 `ui/dist`，可替换为你自己的前端构建结果。
+```bash
+cd webui
+npm install
+npm run dev
+```
+
+Vite 开发服务会把 `/api`、`/healthz`、`/readyz` 代理到本地 `8000` 端口的 API。
 
 ## 生产部署
 
-### 方案 A：单体部署（FastAPI 托管前端）
-将前端构建产物放到 `ui/dist/`，FastAPI 会通过 `StaticFiles` 在根路径自动托管。
+### 方案 A：Docker Compose
+默认 Compose 会用 `Dockerfile.ui` 构建 `webui/`，再用 Nginx 托管构建产物。
 
 ### 方案 B：分离部署（Nginx + API）
 参考 `deploy/nginx/default.conf`：

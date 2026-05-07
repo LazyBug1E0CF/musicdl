@@ -12,7 +12,7 @@ from typing import Any, Deque
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -40,7 +40,7 @@ CORS_ALLOW_ORIGINS = [
     for origin in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173,http://localhost:8080").split(",")
     if origin.strip()
 ]
-SAFE_FILE_CHARS = re.compile(r"[^a-zA-Z0-9._-]+")
+SAFE_FILE_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]+')
 
 
 class InMemoryRateLimiter:
@@ -111,7 +111,7 @@ async def rate_limit_middleware(request: Request, call_next):
 
 
 def sanitize_filename(name: str) -> str:
-    cleaned = SAFE_FILE_CHARS.sub("_", name).strip("._-")
+    cleaned = SAFE_FILE_CHARS.sub("_", name).strip(" ._-")
     if not cleaned:
         cleaned = "download"
     return cleaned[:128]
@@ -146,6 +146,56 @@ def _song_to_schema(song_info):
 
 def _error(code: str, message: str, source: str | None = None, detail: Any = None):
     return {"error": ApiError(code=code, message=message, source=source, detail=detail).model_dump()}
+
+
+def _metadata_value(value: Any) -> str:
+    text = str(value or "").strip()
+    return "" if text in {"", "-", "NULL", "null", "None", "none", "undefined"} else text
+
+
+def _download_extension(song: dict[str, Any]) -> str:
+    ext = _metadata_value(song.get("ext") or Path(str(song.get("save_path") or "")).suffix).lstrip(".").lower()
+    safe_ext = re.sub(r"[^a-z0-9]+", "", ext)
+    return safe_ext or "audio"
+
+
+def _formatted_song_filename(song: dict[str, Any], filename_format: str) -> str:
+    title = _metadata_value(song.get("song_name"))
+    artist = _metadata_value(song.get("singers"))
+    identifier = _metadata_value(song.get("identifier"))
+    source = _metadata_value(song.get("source"))
+    if artist and title:
+        parts = [title, artist] if filename_format == "title-artist" else [artist, title]
+    else:
+        parts = [title or artist or identifier or source or "download"]
+    return f"{sanitize_filename('-'.join(parts))}.{_download_extension(song)}"
+
+
+def _unique_download_path(filename: str) -> Path:
+    base_name = sanitize_filename(Path(filename).stem)
+    ext = Path(filename).suffix or ".audio"
+    candidate = (DOWNLOAD_ROOT / f"{base_name}{ext}").resolve()
+    idx = 1
+    while candidate.exists():
+        candidate = (DOWNLOAD_ROOT / f"{base_name} ({idx}){ext}").resolve()
+        idx += 1
+    if not _is_within_base(DOWNLOAD_ROOT, candidate):
+        raise HTTPException(status_code=400, detail="invalid download path")
+    return candidate
+
+
+def _prepare_song_for_download(song: dict[str, Any], filename_format: str) -> dict[str, Any]:
+    prepared = dict(song)
+    prepared["work_dir"] = str(DOWNLOAD_ROOT)
+    save_path = _unique_download_path(_formatted_song_filename(prepared, filename_format))
+    prepared["_save_path"] = str(save_path)
+    prepared["save_path"] = str(save_path)
+    if isinstance(prepared.get("episodes"), list):
+        prepared["episodes"] = [
+            _prepare_song_for_download(episode, filename_format) if isinstance(episode, dict) else episode
+            for episode in prepared["episodes"]
+        ]
+    return prepared
 
 
 @app.exception_handler(HTTPException)
@@ -215,7 +265,7 @@ async def _run_download(task_id: str, payload: DownloadRequest):
     await registry.update_task(task_id, status=TaskStatus.RUNNING)
     results: list[dict[str, Any]] = []
     try:
-        songs = [s.model_dump() for s in payload.song_infos]
+        songs = [_prepare_song_for_download(s.model_dump(), payload.filename_format) for s in payload.song_infos]
         total = len(songs)
         await registry.update_task(task_id, total=total)
 
@@ -232,7 +282,7 @@ async def _run_download(task_id: str, payload: DownloadRequest):
                 for item in song_results:
                     save_path = item.get("save_path")
                     if save_path and Path(save_path).exists():
-                        await registry.add_artifact(task_id, save_path, str(Path(save_path).parent))
+                        await registry.add_artifact(task_id, save_path, str(DOWNLOAD_ROOT))
                 await registry.append_log(task_id, f"[{idx}/{total}] done")
             except Exception as exc:
                 task = await registry.get_task(task_id)
@@ -277,6 +327,27 @@ async def get_task(task_id: str):
             detail=_error("TASK_NOT_FOUND", "task not found", detail={"task_id": task_id})["error"],
         )
     return task.to_dict()
+
+
+@app.get("/api/v1/tasks/{task_id}/artifacts/{artifact_index}")
+async def download_task_artifact(task_id: str, artifact_index: int):
+    task = await registry.get_task(task_id)
+    if not task:
+        raise HTTPException(
+            status_code=404,
+            detail=_error("TASK_NOT_FOUND", "task not found", detail={"task_id": task_id})["error"],
+        )
+    artifact_path = await registry.get_artifact_path(task_id, artifact_index)
+    if not artifact_path or not _is_within_base(DOWNLOAD_ROOT, artifact_path):
+        raise HTTPException(
+            status_code=404,
+            detail=_error(
+                "ARTIFACT_NOT_FOUND",
+                "artifact not found",
+                detail={"task_id": task_id, "artifact_index": artifact_index},
+            )["error"],
+        )
+    return FileResponse(path=str(artifact_path), filename=artifact_path.name)
 
 
 @app.get("/api/v1/tasks/{task_id}/stream")

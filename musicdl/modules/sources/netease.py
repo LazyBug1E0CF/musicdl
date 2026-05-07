@@ -49,9 +49,10 @@ class NeteaseMusicClient(BaseMusicClient):
         (default_rule := {'s': keyword, 'type': 1, 'limit': 10, 'offset': 0}).update(rule)
         # construct search urls
         search_urls, page_size, count, base_url = [], self.search_size_per_page, 0, 'https://music.163.com/api/cloudsearch/pc'
+        base_offset = int(default_rule.get('offset') or 0)
         while self.search_size_per_source > count:
             (page_rule := copy.deepcopy(default_rule))['limit'] = page_size
-            page_rule['offset'] = int(count // page_size) * page_size
+            page_rule['offset'] = base_offset + int(count // page_size) * page_size
             search_urls.append({'url': base_url, 'data': page_rule})
             count += page_size
         # return

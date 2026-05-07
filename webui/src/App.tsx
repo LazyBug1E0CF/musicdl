@@ -1,78 +1,136 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Drawer, Empty, Input, Layout, Progress, Select, Space, Table, Tag, Typography } from 'antd';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { subscribeTasks } from './api/client';
+import { BottomPlayer } from './components/BottomPlayer';
+import { DownloadQueue } from './components/DownloadQueue';
+import { SearchPage } from './pages/SearchPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { useAppStore } from './store/useAppStore';
 
-const { Header, Content, Footer, Sider } = Layout;
-
 export default function App() {
-  const { t, i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const { searchParams, results, loading, error, downloadTasks, setSearchParams, runSearch, playSong, enqueueDownload, upsertTask, playbackUrl } = useAppStore();
+  const { t } = useTranslation();
+  const {
+    view,
+    searchParams,
+    sourceOptions,
+    settings,
+    results,
+    playbackQueue,
+    currentIndex,
+    hasSearched,
+    currentSong,
+    playbackUrl,
+    downloadTasks,
+    loading,
+    loadingMore,
+    hasMore,
+    effectiveMaxResults,
+    sourcesLoading,
+    resolvingId,
+    downloadingIds,
+    queueOpen,
+    playlistOpen,
+    error,
+    setView,
+    setSearchParams,
+    updateSettings,
+    setSourceCookie,
+    clearSourceCookie,
+    setQueueOpen,
+    setPlaylistOpen,
+    loadSources,
+    runSearch,
+    loadMoreResults,
+    playSong,
+    playQueueIndex,
+    playAdjacent,
+    enqueueDownload,
+  } = useAppStore();
 
   useEffect(() => {
-    const sse = subscribeTasks(upsertTask);
-    return () => sse.close();
-  }, [upsertTask]);
+    void loadSources();
+  }, [loadSources]);
 
-  const columns = useMemo(() => [
-    { title: '歌曲名', dataIndex: 'title' },
-    { title: '歌手', dataIndex: 'artist' },
-    { title: '时长', dataIndex: 'duration' },
-    { title: '来源', dataIndex: 'source' },
-    { title: '音质', dataIndex: 'quality' },
+  const labels = new Proxy(
+    {},
     {
-      title: '操作',
-      render: (_: unknown, row: any) => (
-        <Space>
-          <Button size="small" onClick={() => playSong(row)}>播放</Button>
-          <Button size="small" onClick={() => enqueueDownload(row)}>下载</Button>
-        </Space>
-      ),
+      get: (_, key) => (typeof key === 'string' ? t(key) : ''),
     },
-  ], [enqueueDownload, playSong]);
+  ) as Record<string, string>;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Sider width={320} theme="light">
-        <div className="queue-wrap">
-          <Typography.Title level={5}>{t('downloadQueue')}</Typography.Title>
-          {downloadTasks.map((task) => (
-            <div key={task.id} className="task-item">
-              <div>{task.title}</div>
-              <Tag color={task.status === 'failed' ? 'error' : 'processing'}>{task.status}</Tag>
-              <Progress percent={task.progress} size="small" />
-              {task.status === 'failed' && <Button size="small">{t('retry')}</Button>}
-            </div>
-          ))}
-        </div>
-      </Sider>
-      <Layout>
-        <Header className="header">
-          <Space>
-            <Typography.Title level={4} style={{ margin: 0 }}>{t('title')}</Typography.Title>
-            <Select value={i18n.language} style={{ width: 100 }} onChange={(lng) => i18n.changeLanguage(lng)} options={[{ value: 'zh', label: '中文' }, { value: 'en', label: 'EN' }]} />
-            <Input placeholder={t('searchPlaceholder')} value={searchParams.keyword} onChange={(e) => setSearchParams({ keyword: e.target.value })} style={{ width: 320 }} />
-            <Select mode="multiple" value={searchParams.sources} style={{ width: 220 }} onChange={(sources) => setSearchParams({ sources })} options={[{ value: 'netease' }, { value: 'qq' }, { value: 'spotify' }, { value: 'youtube' }]} />
-            <Button type="primary" onClick={() => void runSearch()} loading={loading}>{t('search')}</Button>
-            <Button onClick={() => setOpen(true)}>{t('advanced')}</Button>
-          </Space>
-        </Header>
-        <Content style={{ padding: 16 }}>
-          {error && <Alert type="error" message={error} description={t('sourceUnavailable')} showIcon />}
-          <Table rowKey="id" columns={columns} dataSource={results} locale={{ emptyText: <Empty description={t('noResult')} /> }} pagination={{ pageSize: 10 }} />
-        </Content>
-        <Footer>
-          <audio controls src={playbackUrl} style={{ width: '100%' }} />
-        </Footer>
-      </Layout>
-      <Drawer title={t('advanced')} open={open} onClose={() => setOpen(false)}>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Select value={searchParams.quality} onChange={(quality) => setSearchParams({ quality })} placeholder="quality" options={[{ value: 'standard' }, { value: 'high' }, { value: 'lossless' }]} />
-          <Input type="number" value={searchParams.limit} onChange={(e) => setSearchParams({ limit: Number(e.target.value) })} placeholder="limit" />
-        </Space>
-      </Drawer>
-    </Layout>
+    <div className="app-shell">
+      <div className="decor decor-record" />
+      <div className="decor decor-note-left">♪</div>
+      <div className="decor decor-note-right">♫</div>
+      <div className="decor decor-eq" />
+
+      {view === 'settings' ? (
+        <SettingsPage
+          sourceOptions={sourceOptions}
+          settings={settings}
+          onBack={() => setView('search')}
+          onUpdateSettings={updateSettings}
+          onSaveCookie={setSourceCookie}
+          onClearCookie={clearSourceCookie}
+          labels={labels}
+        />
+      ) : (
+        <SearchPage
+          params={searchParams}
+          sourceOptions={sourceOptions}
+          settings={settings}
+          results={results}
+          hasSearched={hasSearched}
+          loading={loading}
+          loadingMore={loadingMore}
+          hasMore={hasMore}
+          effectiveMaxResults={effectiveMaxResults}
+          sourcesLoading={sourcesLoading}
+          resolvingId={resolvingId}
+          downloadingIds={downloadingIds}
+          error={error}
+          onParamsChange={setSearchParams}
+          onSearch={() => void runSearch(t('emptyKeyword'))}
+          onLoadMore={() => void loadMoreResults()}
+          onOpenSettings={() => setView('settings')}
+          onPlay={(song) => void playSong(song)}
+          onDownload={(song) => void enqueueDownload(song)}
+          labels={labels}
+        />
+      )}
+
+      <DownloadQueue
+        open={queueOpen}
+        tasks={downloadTasks}
+        onClose={() => setQueueOpen(false)}
+        labels={{
+          title: t('downloadQueue'),
+          empty: t('noTasks'),
+          failed: t('failed'),
+          browserDownload: t('browserDownload'),
+        }}
+      />
+      <BottomPlayer
+        currentSong={currentSong}
+        playbackUrl={playbackUrl}
+        queue={playbackQueue}
+        currentIndex={currentIndex}
+        playlistOpen={playlistOpen}
+        onTogglePlaylist={() => setPlaylistOpen(!playlistOpen)}
+        onSelectTrack={(index) => void playQueueIndex(index)}
+        onPrevious={() => void playAdjacent(-1)}
+        onNext={() => void playAdjacent(1)}
+        labels={{
+          noPlaying: t('noPlaying'),
+          play: t('play'),
+          pause: t('pause'),
+          previousTrack: t('previousTrack'),
+          nextTrack: t('nextTrack'),
+          playlist: t('playlist'),
+          closePlaylist: t('closePlaylist'),
+          seek: t('seek'),
+        }}
+      />
+    </div>
   );
 }

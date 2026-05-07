@@ -42,9 +42,10 @@ class QQMusicClient(BaseMusicClient):
         (default_rule := {'searchid': QQMusicClientUtils.randomsearchid(), 'query': keyword, 'search_type': SearchType.SONG.value, 'num_per_page': self.search_size_per_page, 'page_num': 1, 'highlight': 1, 'grp': 1}).update(rule)
         # construct search urls
         base_url, search_urls, page_size, count = QQMusicClientUtils.enc_endpoint if self.use_encrypted_endpoint else QQMusicClientUtils.endpoint, [], self.search_size_per_page, 0
+        base_page_num = max(1, int(default_rule.get('page_num') or 1))
         while self.search_size_per_source > count:
             (page_rule := copy.deepcopy(default_rule))['num_per_page'] = page_size
-            page_rule['page_num'] = int(count // page_size) + 1
+            page_rule['page_num'] = base_page_num + int(count // page_size)
             payload = QQMusicClientUtils.buildrequestdata(params=page_rule, module="music.search.SearchCgiService", method="DoSearchForQQMusicMobile", credential=Credential().fromcookiesdict(self.default_cookies or request_overrides.get('cookies', {})))
             search_urls.append({'url': base_url, 'data': json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")})
             if self.use_encrypted_endpoint: search_urls[-1]['params'] = {"sign": QQMusicClientUtils.sign(payload)}

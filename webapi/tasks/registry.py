@@ -114,6 +114,15 @@ class TaskRegistry:
         async with event:
             event.notify_all()
 
+    async def get_artifact_path(self, task_id: str, artifact_index: int) -> Path | None:
+        async with self._lock:
+            self._cleanup_expired_locked()
+            paths = self._artifact_paths.get(task_id) or []
+            if artifact_index < 0 or artifact_index >= len(paths):
+                return None
+            path = Path(paths[artifact_index]).resolve()
+            return path if path.exists() and path.is_file() else None
+
     async def wait_for_change(self, task_id: str, timeout: float = 20.0):
         event = self._events[task_id]
         async with event:

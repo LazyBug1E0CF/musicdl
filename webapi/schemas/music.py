@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ApiError(BaseModel):
@@ -20,6 +20,9 @@ class APIConfig(BaseModel):
 
 
 class SongInfoSchema(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, coerce_numbers_to_str=True)
+
+    raw_data: Dict[str, Any] = Field(default_factory=dict)
     song_name: Optional[str] = None
     singers: Optional[str] = None
     source: Optional[str] = None
@@ -27,7 +30,7 @@ class SongInfoSchema(BaseModel):
     album: Optional[str] = None
     ext: Optional[str] = None
     duration: Optional[str] = None
-    duration_s: Optional[int] = None
+    duration_s: Optional[float] = None
     file_size: Optional[str] = None
     file_size_bytes: Optional[int] = None
     bitrate: Optional[int] = None
@@ -38,11 +41,13 @@ class SongInfoSchema(BaseModel):
     cover_url: Optional[str] = None
     download_url: Optional[Any] = None
     download_url_status: Dict[str, Any] = Field(default_factory=dict)
+    default_download_headers: Dict[str, Any] = Field(default_factory=dict)
+    default_download_cookies: Dict[str, Any] = Field(default_factory=dict)
+    protocol: Optional[str] = None
+    work_dir: Optional[str] = None
+    identifier: Optional[str] = None
     save_path: Optional[str] = Field(default=None, alias='path')
     episodes: Optional[List['SongInfoSchema']] = None
-
-    class Config:
-        populate_by_name = True
 
 
 class SearchRequest(BaseModel):
@@ -61,6 +66,7 @@ class DownloadRequest(BaseModel):
     song_infos: List[SongInfoSchema] = Field(default_factory=list)
     sources: List[str] = Field(default_factory=list)
     overrides: APIConfig = Field(default_factory=APIConfig)
+    filename_format: Literal["artist-title", "title-artist"] = "artist-title"
 
 
 class TaskResponse(BaseModel):

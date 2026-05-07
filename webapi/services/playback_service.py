@@ -9,6 +9,18 @@ from urllib.parse import parse_qs, urlparse
 from musicdl.modules import BuildMusicClient, LyricSearchClient, SongInfo, cleanlrc
 
 PLAYBACK_NOT_SUPPORTED = "PLAYBACK_NOT_SUPPORTED"
+SOURCE_ALIASES = {
+    "qq": "QQMusicClient",
+    "netease": "NeteaseMusicClient",
+    "migu": "MiguMusicClient",
+    "kuwo": "KuwoMusicClient",
+    "qianqian": "QianqianMusicClient",
+    "youtube": "YouTubeMusicClient",
+    "spotify": "SpotifyMusicClient",
+    "deezer": "DeezerMusicClient",
+    "tidal": "TIDALMusicClient",
+    "soundcloud": "SoundCloudMusicClient",
+}
 
 
 class PlaybackError(RuntimeError):
@@ -72,21 +84,51 @@ def _build_request_overrides(source: str) -> dict[str, Any]:
     return {"cookies": {"cookie": cookie} if cookie else {}, "headers": headers}
 
 
+def _merge_request_overrides(source: str, overrides: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    merged = _build_request_overrides(source)
+    source_overrides = ((overrides or {}).get("requests_overrides") or {}).get(source) or {}
+    for key, value in source_overrides.items():
+        if key in {"headers", "cookies"} and isinstance(value, dict):
+            merged[key] = {**(merged.get(key) or {}), **value}
+        else:
+            merged[key] = value
+    return merged
+
+
 def resolve_playback(
     source: str,
     song_id: Optional[str] = None,
     song_url: Optional[str] = None,
     song_info: Optional[dict[str, Any]] = None,
     include_lyric: bool = False,
+    overrides: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
+    source = SOURCE_ALIASES.get(str(source).strip().lower(), source)
     sid = _extract_song_id(song_id, song_url)
     module_cfg = {"type": source}
+    module_cfg.update(((overrides or {}).get("init_music_clients_cfg") or {}).get(source) or {})
     client = BuildMusicClient(module_cfg=module_cfg)
+
+    def _playback_payload(song: SongInfo) -> dict[str, Any]:
+        if not song.with_valid_download_url or not isinstance(song.download_url, str):
+            raise PlaybackError(PLAYBACK_NOT_SUPPORTED, f"source={source} does not provide direct stream url")
+        payload = {
+            "stream_url": song.download_url,
+            "mime_type": _extract_mime_type(song.download_url, song.ext),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+        }
+        if include_lyric:
+            lyric = song.lyric
+            if not lyric and song.song_name and song.singers:
+                _, lyric = LyricSearchClient.search(track_name=song.song_name, artist_name=song.singers)
+            if lyric and lyric not in {"NULL", "None", "none"}:
+                payload["lyric"] = cleanlrc(lyric)
+        return payload
 
     def _resolve_from_identifier() -> Optional[SongInfo]:
         if not sid:
             return None
-        resolved_candidates = client.search(keyword=sid, num_threadings=1, request_overrides=_build_request_overrides(source))
+        resolved_candidates = client.search(keyword=sid, num_threadings=1, request_overrides=_merge_request_overrides(source, overrides))
         for candidate in resolved_candidates:
             if str(getattr(candidate, "identifier", "")) == str(sid):
                 return candidate
@@ -104,28 +146,7 @@ def resolve_playback(
                 song = resolved_song
     else:
         song = _resolve_from_identifier() or SongInfo(source=source, identifier=sid)
-
-    overrides = _build_request_overrides(source)
-    downloaded = client.download([song], request_overrides=overrides, auto_supplement_song=True)
-    if not downloaded:
-        raise PlaybackError(PLAYBACK_NOT_SUPPORTED, f"source={source} has no playable stream")
-
-    resolved = downloaded[0]
-    if not resolved.with_valid_download_url or not isinstance(resolved.download_url, str):
-        raise PlaybackError(PLAYBACK_NOT_SUPPORTED, f"source={source} does not provide direct stream url")
-
-    payload = {
-        "stream_url": resolved.download_url,
-        "mime_type": _extract_mime_type(resolved.download_url, resolved.ext),
-        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
-    }
-    if include_lyric:
-        lyric = resolved.lyric
-        if not lyric and resolved.song_name and resolved.singers:
-            _, lyric = LyricSearchClient.search(track_name=resolved.song_name, artist_name=resolved.singers)
-        if lyric and lyric not in {"NULL", "None", "none"}:
-            payload["lyric"] = cleanlrc(lyric)
-    return payload
+    return _playback_payload(song)
 
 
 def get_lyrics(source: str, song_id: Optional[str] = None, song_url: Optional[str] = None, song_name: Optional[str] = None, singers: Optional[str] = None) -> dict[str, Any]:

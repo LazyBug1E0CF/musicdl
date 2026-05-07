@@ -8,6 +8,40 @@ from musicdl.modules import MusicClientBuilder, SongInfo
 
 
 class MusicService:
+    SOURCE_ALIASES = {
+        'qq': 'QQMusicClient',
+        'kugou': 'KugouMusicClient',
+        'streetvoice': 'StreetVoiceMusicClient',
+        'soda': 'SodaMusicClient',
+        'fivesing': 'FiveSingMusicClient',
+        'netease': 'NeteaseMusicClient',
+        'qianqian': 'QianqianMusicClient',
+        'migu': 'MiguMusicClient',
+        'kuwo': 'KuwoMusicClient',
+        'bilibili': 'BilibiliMusicClient',
+        'youtube': 'YouTubeMusicClient',
+        'joox': 'JooxMusicClient',
+        'apple': 'AppleMusicClient',
+        'jamendo': 'JamendoMusicClient',
+        'soundcloud': 'SoundCloudMusicClient',
+        'deezer': 'DeezerMusicClient',
+        'qobuz': 'QobuzMusicClient',
+        'spotify': 'SpotifyMusicClient',
+        'tidal': 'TIDALMusicClient',
+        'fma': 'FMAMusicClient',
+        'jiosaavn': 'JioSaavnMusicClient',
+        'ximalaya': 'XimalayaMusicClient',
+        'lizhi': 'LizhiMusicClient',
+        'qingting': 'QingtingMusicClient',
+        'lrts': 'LRTSMusicClient',
+        'itunes': 'ITunesMusicClient',
+        'mp3juice': 'MP3JuiceMusicClient',
+        'tunehub': 'TuneHubMusicClient',
+        'gdstudio': 'GDStudioMusicClient',
+        'myfreemp3': 'MyFreeMP3MusicClient',
+        'jbsou': 'JBSouMusicClient',
+    }
+
     @staticmethod
     def get_available_sources() -> List[str]:
         return sorted(MusicClientBuilder.REGISTERED_MODULES.keys())
@@ -18,7 +52,12 @@ class MusicService:
             return []
         if isinstance(sources, str):
             sources = [sources]
-        return [s for s in sources if s in MusicClientBuilder.REGISTERED_MODULES]
+        normalized = []
+        for source in sources:
+            canonical = MusicService.SOURCE_ALIASES.get(str(source).strip().lower(), source)
+            if canonical in MusicClientBuilder.REGISTERED_MODULES:
+                normalized.append(canonical)
+        return normalized
 
     @staticmethod
     def _build_client(sources: List[str] | str | None, overrides: Dict[str, Any] | None) -> MusicClient:
