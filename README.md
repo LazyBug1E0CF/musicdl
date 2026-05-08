@@ -65,9 +65,9 @@
 
 # 🎉 What's New
 
+- 2026-05-08: Released musicdl v2.11.4 — added a NetEase Cloud Music lossless parsing interface; added a Qobuz lossless music parsing interface; added a common music client that supports JOOX and Qobuz music sources.
 - 2026-04-28: Released musicdl v2.11.3 — added support for searching and downloading a large collection of free audiobooks/audio programs from Apple Podcasts; added a free built-in member account for the Qobuz Music.
 - 2026-04-26: Released musicdl v2.11.2 — introduced support for the JioSaavn music platform, enabling users to easily search for songs, parse entire playlists, and download tracks directly.
-- 2026-04-24: Released musicdl v2.11.1 — fix Spotify playlist parsing; add multiple free lossless music sources; add support for music search, playlist parsing, and music downloads from Free Music Archive.
 
 
 # 🎵 Introduction
@@ -122,6 +122,7 @@ If you are a copyright or rights holder and believe that this repository infring
 |                                          | [MP3JuiceMusicClient](https://mp3juice.co/)                        | [MP3 Juice (SoundCloud+YouTube音乐源)](https://mp3juice.co/)                 | ✅        | ✅         | [mp3juice.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/common/mp3juice.py)                    |
 |                                          | [MyFreeMP3MusicClient](https://www.myfreemp3.com.cn/)              | [MyFreeMP3 (网易云+夸克音乐源)](https://www.myfreemp3.com.cn/)               | ✅        | ✅         | [myfreemp3.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/common/myfreemp3.py)                  |
 |                                          | [TuneHubMusicClient](https://tunehub.sayqz.com/docs)               | [TuneHub音乐 (QQ网易云酷我音乐源)](https://tunehub.sayqz.com/docs)           | ✅        | ✅         | [tunehub.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/common/tunehub.py)                      |
+|                                          | [WJHEMusicClient](https://music.wjhe.top/)                         | [HEMusic (Qobuz咪咕JOOX无损音源)](https://music.wjhe.top/)                   | ✅        | ✅         | [wjhe.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/common/wjhe.py)                            |
 | **Unofficial Download Sites / Scrapers** | [BuguyyMusicClient](https://buguyy.top/)                           | [布谷音乐](https://buguyy.top/)                                              | ✅        | ✅         | [buguyy.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/thirdpartysites/buguyy.py)               |
 |                                          | [FangpiMusicClient](https://www.fangpi.net/)                       | [放屁音乐](https://www.fangpi.net/)                                          | ✅        | ✅         | [fangpi.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/thirdpartysites/fangpi.py)               |
 |                                          | [FiveSongMusicClient](https://www.5song.xyz/index.html)            | [5Song无损音乐](https://www.5song.xyz/index.html)                            | ✅        | ✅         | [fivesong.py](https://github.com/CharlesPikachu/musicdl/blob/master/musicdl/modules/thirdpartysites/fivesong.py)           |

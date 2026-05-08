@@ -2112,6 +2112,54 @@ To use TuneHubMusicClient, all you need is pip install musicdl. You don’t have
 </div>
 <br />
 
+#### WJHEMusicClient
+
+[HEMusic](https://music.wjhe.top/) is an online music search and playback platform that allows users to search tracks, import playlists or albums, and access available music resources through a web-based interface.
+
+For music-related operations on the platform above, `WJHEMusicClient` provides a simple client implementation for interacting with HEMusic.
+
+The table below lists the music sources currently supported by `WJHEMusicClient` through HEMusic:
+
+| Source (EN)             | Source (CN)                        | Official Websites                        | `allowed_music_sources`      |
+| -----------------       | -------------------                | -----------------------------------      | -------------------          |
+| Qobuz                   | Qobuz                              | https://www.qobuz.com                    | `qobuz`                      |
+| JOOX                    | JOOX (QQ音乐海外版)                | https://www.joox.com                     | `joox`                       |
+| Migu                    | 咪咕音乐                           | https://music.migu.cn/v5/#/musicLibrary  | `migu`                       |
+
+`WJHEMusicClient` does not depend on external command-line tools such as `ffmpeg` or `N_m3u8DL-RE`. Once `musicdl` is installed, it is ready to use.
+
+(1) Command-Line Usage
+
+- Search for and Download Playable Music Files from Websites
+
+  `musicdl -m WJHEMusicClient`
+
+- Restrict Music Sources and Number of Results
+
+  `musicdl -m WJHEMusicClient -i "{'WJHEMusicClient': {'search_size_per_source': 3, 'allowed_music_sources': ['joox']}}"`
+
+(2) Invoke It in Python
+
+- Search for and Download Playable Music Files from Websites
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['WJHEMusicClient'])
+  music_client.startcmdui()
+  ```
+
+- Restrict Music Sources and Number of Results
+
+  ```python
+  from musicdl import musicdl
+
+  # allowed_music_sources can be set to any subset (i.e., any combination) of ['qobuz', 'joox', 'migu']
+  init_music_clients_cfg = {'WJHEMusicClient': {'search_size_per_source': 3, 'allowed_music_sources': ['qobuz']}}
+  music_client = musicdl.MusicClient(music_sources=['WJHEMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  music_client.startcmdui()
+  ```
+
 ## Unofficial Download Sites / Scrapers
 
 #### BuguyyMusicClient
