@@ -10,9 +10,12 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Any, Deque
 
+from urllib.parse import quote
+
+import requests
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -84,6 +87,11 @@ class MockDownloadRequest(BaseModel):
     subdir: str = Field(default="default")
     filename: str
     content: str = ""
+
+
+class DirectDownloadRequest(BaseModel):
+    url: str
+    filename: str
 
 
 @app.middleware("http")
@@ -369,6 +377,45 @@ async def stream_task(task_id: str):
             await registry.wait_for_change(task_id)
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.post("/api/v1/download/direct")
+async def direct_download(payload: DirectDownloadRequest):
+    """Proxy an upstream download URL without saving to disk. Returns the
+    file stream with Content-Disposition so the browser shows a save dialog."""
+    filename = sanitize_filename(payload.filename)
+    if not filename:
+        filename = "download"
+
+    try:
+        upstream = await asyncio.to_thread(
+            lambda: requests.get(payload.url, stream=True, timeout=30, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            })
+        )
+        upstream.raise_for_status()
+    except requests.RequestException as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=_error("PROXY_FETCH_FAILED", f"failed to fetch upstream URL: {exc}")["error"],
+        )
+
+    content_type = upstream.headers.get("content-type", "application/octet-stream")
+    quoted_filename = quote(filename.encode("utf-8"))
+
+    def _stream():
+        try:
+            yield from upstream.iter_content(chunk_size=65536)
+        finally:
+            upstream.close()
+
+    return StreamingResponse(
+        _stream(),
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quoted_filename}",
+        },
+    )
 
 
 if Path("ui/dist").exists():

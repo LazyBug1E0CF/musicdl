@@ -251,3 +251,23 @@ export function subscribeTask(taskId: string, title: string, onMessage: (task: D
   };
   return source;
 }
+
+export async function directDownload(url: string, filename: string): Promise<void> {
+  const response = await fetch('/api/v1/download/direct', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, filename }),
+  });
+  if (!response.ok) throw new Error(await readError(response));
+
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(blobUrl);
+}

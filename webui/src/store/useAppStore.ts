@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   createDownloadTask,
+  directDownload,
   fetchSources,
   getTask,
   resolvePlayback,
@@ -49,17 +50,6 @@ function loadPersistedSettings(): WebUISettings {
 
 function persistSettings(settings: WebUISettings) {
   window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-}
-
-function triggerBrowserDownload(url: string, filename: string) {
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noreferrer';
-  link.target = '_blank';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
 }
 
 function effectiveMaxResults(params: SearchParams, settings: WebUISettings): number {
@@ -343,7 +333,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           const directUrl = typeof song.raw.download_url === 'string' ? song.raw.download_url : undefined;
           const resolvedUrl = directUrl || (await resolvePlayback(song, settings)).stream_url;
           if (resolvedUrl) {
-            triggerBrowserDownload(resolvedUrl, formatDownloadFilename(song, settings.downloadFilenameFormat));
+            const filename = formatDownloadFilename(song, settings.downloadFilenameFormat);
+            await directDownload(resolvedUrl, filename);
             return;
           }
         } catch {
