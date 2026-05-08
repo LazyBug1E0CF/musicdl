@@ -152,7 +152,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set, get) => ({
   view: 'search',
-  searchParams: { keyword: '', sources: DEFAULT_SOURCES.map((source) => source.value), category: 'all' },
+  searchParams: { keyword: '', sources: DEFAULT_SOURCES.map((source) => source.value), category: 'song' },
   sourceOptions: DEFAULT_SOURCES,
   settings: loadPersistedSettings(),
   results: [],

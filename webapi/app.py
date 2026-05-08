@@ -251,7 +251,7 @@ def get_sources():
 @app.post("/api/v1/search")
 def search(payload: SearchRequest):
     try:
-        results = MusicService.search(payload.keyword, payload.sources, payload.overrides.model_dump())
+        results = MusicService.search(payload.keyword, payload.sources, payload.overrides.model_dump(), category=payload.category)
         return {"results": {source: [_song_to_schema(s) for s in songs] for source, songs in results.items()}}
     except Exception as exc:
         raise HTTPException(status_code=400, detail=_error("SEARCH_FAILED", "search failed", detail=str(exc))["error"]) from exc

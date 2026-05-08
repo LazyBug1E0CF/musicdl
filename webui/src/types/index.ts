@@ -6,7 +6,7 @@ export interface SearchParams {
 
 export type AppView = 'search' | 'settings';
 
-export type SearchCategory = 'all' | 'song' | 'album' | 'artist';
+export type SearchCategory = 'song' | 'album' | 'artist';
 
 export type DownloadMode = 'server' | 'browser';
 

@@ -3,7 +3,6 @@ import type {
   DownloadTask,
   RawSongInfo,
   RequestSettings,
-  SearchCategory,
   SearchParams,
   SongResult,
   SourceOption,
@@ -38,21 +37,6 @@ interface PlaybackResponse {
 
 export const SEARCH_BATCH_SIZE_PER_SOURCE = 2;
 const SEARCH_REQUEST_TIMEOUT_SECONDS = 6;
-const CATEGORY_SEARCH_RULES: Record<SearchCategory, Record<string, Record<string, unknown>>> = {
-  all: {},
-  song: {
-    NeteaseMusicClient: { type: 1 },
-    QQMusicClient: { search_type: 0 },
-  },
-  album: {
-    NeteaseMusicClient: { type: 10 },
-    QQMusicClient: { search_type: 2 },
-  },
-  artist: {
-    NeteaseMusicClient: { type: 100 },
-    QQMusicClient: { search_type: 1 },
-  },
-};
 
 async function readError(res: Response): Promise<string> {
   try {
@@ -133,7 +117,6 @@ function buildSearchOverrides(params: SearchParams, paging: Record<string, Sourc
     ]),
   );
   const cookieConfig = buildCookieConfig(sources, settings);
-  const categoryRules = CATEGORY_SEARCH_RULES[params.category] ?? {};
   const pagingRules = Object.fromEntries(
     sources.map((source) => {
       const sourcePaging = paging[source] ?? { offset: 0, page: 1, exhausted: false };
@@ -148,7 +131,7 @@ function buildSearchOverrides(params: SearchParams, paging: Record<string, Sourc
     clients_threadings: Object.fromEntries(sources.map((source) => [source, Math.max(1, perSource)])),
     requests_overrides: Object.fromEntries(sources.map((source) => [source, { timeout: SEARCH_REQUEST_TIMEOUT_SECONDS }])),
     search_rules: Object.fromEntries(
-      sources.map((source) => [source, { ...(categoryRules[source] ?? {}), ...(pagingRules[source] ?? {}) }]),
+      sources.map((source) => [source, { ...(pagingRules[source] ?? {}) }]),
     ),
   };
 }
@@ -201,6 +184,7 @@ export async function searchSongBatch(
     body: JSON.stringify({
       keyword: params.keyword.trim(),
       sources: params.sources,
+      category: params.category,
       overrides: buildSearchOverrides(params, paging, settings),
     }),
   });

@@ -64,7 +64,6 @@ export default {
   seek: '播放进度',
   directDownloadStarted: '已尝试调用浏览器下载',
   fallbackToServer: '直链不可用，已创建服务端下载任务',
-  'category.all': '全部',
   'category.song': '歌曲',
   'category.album': '专辑',
   'category.artist': '歌手',

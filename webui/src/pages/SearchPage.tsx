@@ -27,7 +27,7 @@ interface SearchPageProps {
   labels: Record<string, string>;
 }
 
-const categories: SearchCategory[] = ['all', 'song', 'album', 'artist'];
+const categories: SearchCategory[] = ['song', 'album', 'artist'];
 
 export function SearchPage({
   params,

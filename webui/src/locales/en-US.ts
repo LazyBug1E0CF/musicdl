@@ -64,7 +64,6 @@ export default {
   seek: 'Playback progress',
   directDownloadStarted: 'Browser download attempted',
   fallbackToServer: 'Direct URL unavailable; server task created',
-  'category.all': 'All',
   'category.song': 'Songs',
   'category.album': 'Albums',
   'category.artist': 'Artists',

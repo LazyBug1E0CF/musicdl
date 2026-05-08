@@ -6,6 +6,8 @@ from typing import Any, Dict, List
 from musicdl.musicdl import MusicClient
 from musicdl.modules import MusicClientBuilder, SongInfo
 
+from webapi.services.search_category import translate_search_category
+
 
 class MusicService:
     SOURCE_ALIASES = {
@@ -60,6 +62,10 @@ class MusicService:
         return normalized
 
     @staticmethod
+    def _category_search_rules(category: str, sources: list[str]) -> dict[str, dict[str, Any]]:
+        return translate_search_category(category, sources)
+
+    @staticmethod
     def _build_client(sources: List[str] | str | None, overrides: Dict[str, Any] | None) -> MusicClient:
         overrides = overrides or {}
         return MusicClient(
@@ -95,8 +101,15 @@ class MusicService:
         return sorted(inferred_sources)
 
     @staticmethod
-    def search(keyword: str, sources: List[str] | str | None = None, overrides: Dict[str, Any] | None = None) -> Dict[str, List[SongInfo]]:
-        client = MusicService._build_client(sources, overrides)
+    def search(keyword: str, sources: List[str] | str | None = None, overrides: Dict[str, Any] | None = None, category: str = "song") -> Dict[str, List[SongInfo]]:
+        normalized = MusicService._normalize_sources(sources)
+        category_rules = MusicService._category_search_rules(category, normalized)
+        merged_overrides = dict(overrides or {})
+        merged_overrides["search_rules"] = {
+            source: {**category_rules.get(source, {}), **(merged_overrides.get("search_rules") or {}).get(source, {})}
+            for source in (normalized or [])
+        }
+        client = MusicService._build_client(sources, merged_overrides)
         return client.search(keyword=keyword)
 
     @staticmethod

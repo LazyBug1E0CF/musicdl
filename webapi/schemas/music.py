@@ -53,6 +53,7 @@ class SongInfoSchema(BaseModel):
 class SearchRequest(BaseModel):
     keyword: str
     sources: List[str] = Field(default_factory=list)
+    category: str = "song"
     overrides: APIConfig = Field(default_factory=APIConfig)
 
 
