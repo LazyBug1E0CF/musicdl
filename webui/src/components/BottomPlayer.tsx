@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { Heart, ListMusic, Pause, Play, SkipBack, SkipForward, Volume2, X } from 'lucide-react';
+import { Heart, ListMusic, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react';
 import type { SongResult } from '../types';
 
 interface BottomPlayerProps {
@@ -49,6 +49,10 @@ export function BottomPlayer({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioError, setAudioError] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const prevVolumeRef = useRef(1);
+  const [volumePopupOpen, setVolumePopupOpen] = useState(false);
+  const volumeWrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -63,8 +67,57 @@ export function BottomPlayer({
     }
     setAudioError(false);
     audio.src = playbackUrl;
+    audio.volume = volume;
     audio.play().catch(() => setPlaying(false));
   }, [playbackUrl]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    if (!volumePopupOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (volumeWrapRef.current && !volumeWrapRef.current.contains(target)) {
+        setVolumePopupOpen(false);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [volumePopupOpen]);
+
+  const updateVolumeFromEvent = useCallback((clientX: number) => {
+    const bar = volumeWrapRef.current?.querySelector('.volume-bar');
+    if (!bar) return;
+    const rect = bar.getBoundingClientRect();
+    const newVol = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    setVolume(newVol);
+    if (audioRef.current) audioRef.current.volume = newVol;
+  }, []);
+
+  const handleVolumeBarMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    updateVolumeFromEvent(event.clientX);
+    const handleMove = (e: MouseEvent) => { updateVolumeFromEvent(e.clientX); };
+    const handleUp = () => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+    };
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+  }, [updateVolumeFromEvent]);
+
+  const handleVolumeIconClick = () => setVolumePopupOpen((v) => !v);
+
+  const handleMuteToggle = useCallback(() => {
+    setVolume((prev) => {
+      if (prev > 0) {
+        prevVolumeRef.current = prev;
+        return 0;
+      }
+      return prevVolumeRef.current || 1;
+    });
+  }, []);
 
   function togglePlayback() {
     const audio = audioRef.current;
@@ -168,11 +221,36 @@ export function BottomPlayer({
           />
           <span>{formatTime(duration)}</span>
         </div>
-        <div className="volume-wrap">
-          <Volume2 size={22} />
-          <div className="volume-bar">
-            <span />
+        <div className="volume-wrap" ref={volumeWrapRef}>
+          <button className="icon-button volume-icon-mute" type="button" aria-label={volume === 0 ? 'Unmute' : 'Mute'} onClick={handleMuteToggle}>
+            {volume === 0 ? <VolumeX size={22} /> : <Volume2 size={22} />}
+          </button>
+          <button className="icon-button volume-icon-popup" type="button" aria-label="Volume" onClick={handleVolumeIconClick}>
+            {volume === 0 ? <VolumeX size={22} /> : <Volume2 size={22} />}
+          </button>
+          <div className="volume-bar" role="slider" aria-label="Volume" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(volume * 100)} onMouseDown={handleVolumeBarMouseDown}>
+            <span style={{ width: `${volume * 100}%` }} />
           </div>
+          {volumePopupOpen && (
+            <div className="volume-popup">
+              <input
+                className="volume-slider-vertical"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setVolume(v);
+                  if (audioRef.current) audioRef.current.volume = v;
+                }}
+              />
+              <button className="volume-mute-button" type="button" aria-label={volume === 0 ? 'Unmute' : 'Mute'} onClick={handleMuteToggle}>
+                {volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+            </div>
+          )}
         </div>
         <button
           className={playlistOpen ? 'icon-button icon-button-active' : 'icon-button'}
