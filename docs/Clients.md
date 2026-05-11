@@ -65,7 +65,7 @@ BodianMusicClient requires no additional command-line tools such as ffmpeg or N_
 
 - Simple usage for searching and downloading songs, with login cookies:
 
-  `musicdl -m BodianMusicClient -i "{'BodianMusicClient': {'default_search_cookies': 'YOUR_COOKIES'}}"`
+  `musicdl -m BodianMusicClient -i "{'BodianMusicClient': {'default_search_cookies': {'uid': 'xxx', 'token': 'xxx', 'dev_id': 'xxx'}}}"`
   
   Please be aware that BodianMusicClient only accepts VIP membership cookies in the following format:
   
@@ -79,7 +79,7 @@ BodianMusicClient requires no additional command-line tools such as ffmpeg or N_
 
 - Simple usage for playlist parsing and downloading, with login cookies:
   
-  `musicdl -p "https://h5app.kuwo.cn/m/bodian/collection.html?uid=45780003&playlistId=86749638&source=5&owerId=" -m BodianMusicClient -i "{'BodianMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+  `musicdl -p "https://h5app.kuwo.cn/m/bodian/collection.html?uid=45780003&playlistId=86749638&source=5&owerId=" -m BodianMusicClient -i "{'BodianMusicClient': {'default_parse_cookies': {'uid': 'xxx', 'token': 'xxx', 'dev_id': 'xxx'}}}"`
 
 (2) Invoke It in Python
 
