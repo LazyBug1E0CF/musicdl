@@ -995,11 +995,11 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
 
 - Basic usage for playlist parsing and downloading, without login cookies:
 
-  `musicdl -p "https://www.deezer.com/en/playlist/1286555965" -m DeezerMusicClient`
+  `musicdl -p "https://www.deezer.com/en/playlist/9221517042" -m DeezerMusicClient`
 
 - Simple usage for playlist parsing and downloading, with login cookies:
 
-  `musicdl -p "https://www.deezer.com/en/playlist/1286555965" -m DeezerMusicClient -i "{'DeezerMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+  `musicdl -p "https://www.deezer.com/en/playlist/9221517042" -m DeezerMusicClient -i "{'DeezerMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
 
 (2) Invoke It in Python
 
@@ -1033,7 +1033,7 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
   from musicdl import musicdl
 
   music_client = musicdl.MusicClient(music_sources=['DeezerMusicClient'])
-  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/1286555965")
+  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/9221517042")
   music_client.download(song_infos=song_infos)
   ```
 
@@ -1049,7 +1049,7 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
     }
   }
   music_client = musicdl.MusicClient(music_sources=['DeezerMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
-  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/1286555965")
+  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/9221517042")
   music_client.download(song_infos=song_infos)
   ```
 
