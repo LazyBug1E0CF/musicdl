@@ -1,5 +1,17 @@
 # Release Log
 
+- 2026-05-16: Released musicdl v2.11.10 — emergency fix for Migu Music becoming invalid issues, ensuring access to at least 320 kbps files and restoring lossless audio via member cookies.
+
+- 2026-05-15: Released musicdl v2.11.9 — optimized some third-party interfaces; added multiple API endpoints with member-quality audio for supported music platforms (kuwo, netease, kugou).
+
+- 2026-05-14: Released musicdl v2.11.8 — added support for music search and downloads from the Suno site, as well as playlist parsing and downloading; added multiple third-party parsing APIs for the Ximalaya and Qobuz platforms.
+
+- 2026-05-13: Released musicdl v2.11.7 — fix some broken third-party APIs for TIDAL, Qobuz, Deezer, YouTube, and Spotify, and add multiple new parsing APIs that include VIP accounts.
+
+- 2026-05-11: Released musicdl v2.11.6 — added support for Bodian Music, including search, download, and playlist parsing features; fixed multiple lossless music API endpoints; added several new lossless music API endpoints; Tidal now downloads in FLAC format by default.
+
+- 2026-05-09: Released musicdl v2.11.5 — added support for music search and downloads from OpenGameArt ("opengameart.org"), along with multiple VIP account APIs for QQ Music, Kuwo Music, and NetEase Cloud Music.
+
 - 2026-05-08: Released musicdl v2.11.4 — added a NetEase Cloud Music lossless parsing interface; added a Qobuz lossless music parsing interface; added a common music client that supports JOOX and Qobuz music sources.
 
 - 2026-04-28: Released musicdl v2.11.3 — added support for searching and downloading a large collection of free audiobooks/audio programs from Apple Podcasts; added a free built-in member account for the Qobuz Music.

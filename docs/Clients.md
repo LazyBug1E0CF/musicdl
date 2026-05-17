@@ -49,6 +49,90 @@ BilibiliMusicClient requires no additional CLI tools such as ffmpeg or N_m3u8DL-
   music_client.startcmdui()
   ```
 
+#### BodianMusicClient (Built-in Premium Account)
+
+[Bodian Music](https://bodian.kuwo.cn/) is a streamlined QQ Music app offering over 100 million licensed songs, one-tap listening, personalized recommendations, scene-based radio, customizable players, and immersive music backgrounds.
+
+BodianMusicClient supports downloading music from the platform mentioned above.
+
+BodianMusicClient requires no additional command-line tools such as ffmpeg or N_m3u8DL-RE, just install it with pip install musicdl and start using it right away.
+
+(1) Command-Line Usage
+
+- Basic usage for song search and download, without login cookies:
+
+  `musicdl -m BodianMusicClient`
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  `musicdl -m BodianMusicClient -i "{'BodianMusicClient': {'default_search_cookies': {'uid': 'xxx', 'token': 'xxx', 'dev_id': 'xxx'}}}"`
+  
+  Please be aware that BodianMusicClient only accepts VIP membership cookies in the following format:
+  
+  `default_search_cookies = {"uid": "xxx", "token": "xxx", "dev_id": "xxx-xxx-xxx-xxx-xxx"}`
+  
+  The `uid`, `token`, and `dev_id` can be obtained by packet capturing the Bodian Music desktop client or mobile app.
+
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  `musicdl -p "https://h5app.kuwo.cn/m/bodian/collection.html?uid=45780003&playlistId=86749638&source=5&owerId=" -m BodianMusicClient`
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+  
+  `musicdl -p "https://h5app.kuwo.cn/m/bodian/collection.html?uid=45780003&playlistId=86749638&source=5&owerId=" -m BodianMusicClient -i "{'BodianMusicClient': {'default_parse_cookies': {'uid': 'xxx', 'token': 'xxx', 'dev_id': 'xxx'}}}"`
+
+(2) Invoke It in Python
+
+- Basic usage for song search and download, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['BodianMusicClient'])
+  music_client.startcmdui()
+  ```
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'BodianMusicClient': {
+        'default_search_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['BodianMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  music_client.startcmdui()
+  ```
+
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['BodianMusicClient'])
+  song_infos = music_client.parseplaylist("https://h5app.kuwo.cn/m/bodian/collection.html?uid=45780003&playlistId=86749638&source=5&owerId=")
+  music_client.download(song_infos=song_infos)
+  ```
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'BodianMusicClient': {
+        'default_parse_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['BodianMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  song_infos = music_client.parseplaylist("https://h5app.kuwo.cn/m/bodian/collection.html?uid=45780003&playlistId=86749638&source=5&owerId=")
+  music_client.download(song_infos=song_infos)
+  ```
+
 #### FiveSingMusicClient
 
 [5SING Music](https://5sing.kugou.com/index.html) is a KuGou-affiliated online music platform where users can upload and discover original songs, covers, instrumentals, playlists, videos, and independent musicians.
@@ -886,7 +970,7 @@ To use AppleMusicClient, you will need extra CLI tools such as [FFmpeg](https://
   music_client.download(song_infos=song_infos)
   ```
 
-#### DeezerMusicClient
+#### DeezerMusicClient (Built-in Premium Account)
 
 [Deezer](https://www.deezer.com/us/) is a music streaming platform that lets users listen to over 120 million tracks, podcasts, playlists, and other audio content online.
 
@@ -900,7 +984,7 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
   
   `musicdl -m DeezerMusicClient`
   
-  Please note that if you use DeezerMusicClient without configuring your account cookies, you will only be able to download roughly a 30-second preview clip for each song.
+  Please note that if you use DeezerMusicClient without configuring your account cookies, you will only be able to download roughly a 30-second preview clip for each song (if the built-in premium account expires, which happens quite easily).
 
 - Simple usage for searching and downloading songs, with login cookies:
 
@@ -909,9 +993,13 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
   Configured cookies must include the "arl" field, for example `{'arl': xxx, ...}` or `arl=xxx; ...`.
   In addition, if the account cookies you provide are not from a Deezer Premium subscriber, you will only be able to download songs at 128 kbps.
 
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  `musicdl -p "https://www.deezer.com/en/playlist/9221517042" -m DeezerMusicClient`
+
 - Simple usage for playlist parsing and downloading, with login cookies:
 
-  `musicdl -p "https://www.deezer.com/en/playlist/1286555965" -m DeezerMusicClient -i "{'DeezerMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+  `musicdl -p "https://www.deezer.com/en/playlist/9221517042" -m DeezerMusicClient -i "{'DeezerMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
 
 (2) Invoke It in Python
 
@@ -939,6 +1027,16 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
   music_client.startcmdui()
   ```
 
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['DeezerMusicClient'])
+  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/9221517042")
+  music_client.download(song_infos=song_infos)
+  ```
+
 - Simple usage for playlist parsing and downloading, with login cookies:
 
   ```python
@@ -951,7 +1049,7 @@ DeezerMusicClient comes with no extra CLI tool requirements such as ffmpeg or N_
     }
   }
   music_client = musicdl.MusicClient(music_sources=['DeezerMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
-  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/1286555965")
+  song_infos = music_client.parseplaylist("https://www.deezer.com/en/playlist/9221517042")
   music_client.download(song_infos=song_infos)
   ```
 
@@ -1256,6 +1354,31 @@ JioSaavnMusicClient works out of the box without requiring external command-line
   music_client.download(song_infos=song_infos)
   ```
 
+#### OpenGameArtMusicClient
+
+[OpenGameArt](https://opengameart.org/) is a community-driven platform that provides free and open-licensed game assets, including sprites, textures, music, and sound effects for game developers.
+
+You can use OpenGameArtMusicClient to download music from the platform mentioned above.
+
+OpenGameArtMusicClient does not require any additional CLI tools, such as ffmpeg or N_m3u8DL-RE. Simply install musicdl via pip, and it is ready to use out of the box.
+
+(1) Command-Line Usage
+
+- Basic usage for song search and download, without login cookies:
+
+  `musicdl -m OpenGameArtMusicClient`
+
+(2) Invoke It in Python
+
+- Basic usage for song search and download, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['OpenGameArtMusicClient'])
+  music_client.startcmdui()
+  ```
+
 #### QobuzMusicClient (Built-in Premium Account)
 
 [Qobuz](https://play.qobuz.com/discover) is a high-resolution music streaming and download platform that offers more than 100 million tracks in CD-quality and Hi-Res audio for music listening and discovery.
@@ -1457,6 +1580,90 @@ SpotifyMusicClient works out of the box with just musicdl installed, without req
 
   music_client = musicdl.MusicClient(music_sources=['SpotifyMusicClient'])
   song_infos = music_client.parseplaylist("https://open.spotify.com/playlist/36S7vjbqxUnzEGg9pBJ6p3")
+  music_client.download(song_infos=song_infos)
+  ```
+
+#### SunoMusicClient
+
+[Suno](https://suno.com/discover) is a music company built to amplify imagination, making it possible for anyone to turn ideas, emotions, and stories into original songs and explore new ways of creating music with AI.
+
+SunoMusicClient provides a simple way to fetch music from the platform mentioned above.
+
+SunoMusicClient works out of the box with only musicdl installed and does not require extra command-line tools such as ffmpeg or N_m3u8DL-RE.
+
+(1) Command-Line Usage
+
+- Basic usage for song search and download, without login cookies:
+
+  `musicdl -m SunoMusicClient`
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  `musicdl -m SunoMusicClient -i "{'SunoMusicClient': {'default_search_cookies': 'YOUR_COOKIES'}}"`
+
+  The cookies config for SunoMusicClient should only include `auth_token`. 
+  This value can be obtained from the network requests: look for the authorization header in Request Headers and copy the long token after Bearer. 
+  For example:
+  
+  `{'auth_token': xxx}`
+
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  `musicdl -p "https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e" -m SunoMusicClient`
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  `musicdl -p "https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e" -m SunoMusicClient -i "{'SunoMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+
+(2) Invoke It in Python
+
+- Basic usage for song search and download, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'])
+  music_client.startcmdui()
+  ```
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'SunoMusicClient': {
+        'default_search_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  music_client.startcmdui()
+  ```
+
+- Basic usage for playlist parsing and downloading, without login cookies:
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'])
+  song_infos = music_client.parseplaylist("https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e")
+  music_client.download(song_infos=song_infos)
+  ```
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'SunoMusicClient': {
+        'default_parse_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['SunoMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  song_infos = music_client.parseplaylist("https://suno.com/playlist/176ff485-6f66-4701-ac01-d55f194c325e")
   music_client.download(song_infos=song_infos)
   ```
 
@@ -2116,9 +2323,9 @@ To use TuneHubMusicClient, all you need is pip install musicdl. You don’t have
 
 [HEMusic](https://music.wjhe.top/) is an online music search and playback platform that allows users to search tracks, import playlists or albums, and access available music resources through a web-based interface.
 
-For music-related operations on the platform above, `WJHEMusicClient` provides a simple client implementation for interacting with HEMusic.
+For music-related operations on the platform above, WJHEMusicClient provides a simple client implementation for interacting with HEMusic.
 
-The table below lists the music sources currently supported by `WJHEMusicClient` through HEMusic:
+The table below lists the music sources currently supported by WJHEMusicClient through HEMusic:
 
 | Source (EN)             | Source (CN)                        | Official Websites                        | `allowed_music_sources`      |
 | -----------------       | -------------------                | -----------------------------------      | -------------------          |
@@ -2126,7 +2333,7 @@ The table below lists the music sources currently supported by `WJHEMusicClient`
 | JOOX                    | JOOX (QQ音乐海外版)                | https://www.joox.com                     | `joox`                       |
 | Migu                    | 咪咕音乐                           | https://music.migu.cn/v5/#/musicLibrary  | `migu`                       |
 
-`WJHEMusicClient` does not depend on external command-line tools such as `ffmpeg` or `N_m3u8DL-RE`. Once `musicdl` is installed, it is ready to use.
+WJHEMusicClient does not depend on external command-line tools such as ffmpeg or N_m3u8DL-RE. Once musicdl is installed, it is ready to use.
 
 (1) Command-Line Usage
 
