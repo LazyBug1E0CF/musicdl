@@ -231,6 +231,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({ error: emptyKeywordMessage, results: [], hasSearched: false, hasMore: false });
       return;
     }
+    if (!params.sources.length) {
+      return;
+    }
 
     const maxResults = effectiveMaxResults(params, get().settings);
     const searchPaging = initialPaging(params.sources);

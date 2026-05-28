@@ -1,6 +1,6 @@
 import { Alert } from 'antd';
 import { Search, Settings } from 'lucide-react';
-import type { SearchCategory, SearchParams, SongResult, SourceOption, WebUISettings } from '../types';
+import type { SearchParams, SongResult, SourceOption, WebUISettings } from '../types';
 import { SourcePicker } from '../components/SourcePicker';
 import { ResultList } from '../components/ResultList';
 
@@ -26,8 +26,6 @@ interface SearchPageProps {
   onDownload: (song: SongResult) => void;
   labels: Record<string, string>;
 }
-
-const categories: SearchCategory[] = ['song', 'album', 'artist'];
 
 export function SearchPage({
   params,
@@ -70,19 +68,6 @@ export function SearchPage({
       )}
 
       <section className={showResultsPanel ? 'search-console search-console-compact' : 'search-console'}>
-        <div className="category-tabs">
-          {categories.map((category) => (
-            <button
-              className={params.category === category ? 'category-tab category-tab-active' : 'category-tab'}
-              key={category}
-              type="button"
-              onClick={() => onParamsChange({ category })}
-            >
-              {labels[`category.${category}`]}
-            </button>
-          ))}
-        </div>
-
         <div className="search-bar">
           <Search className="search-icon" size={34} />
           <input
@@ -90,10 +75,15 @@ export function SearchPage({
             placeholder={labels.searchPlaceholder}
             onChange={(event) => onParamsChange({ keyword: event.target.value })}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') onSearch();
+              if (event.key === 'Enter' && params.sources.length > 0) onSearch();
             }}
           />
-          <button className="primary-gradient-button" type="button" onClick={onSearch} disabled={loading}>
+          <button
+            className="primary-gradient-button"
+            type="button"
+            onClick={onSearch}
+            disabled={loading || params.sources.length === 0}
+          >
             {loading ? labels.searching : labels.search}
           </button>
         </div>
