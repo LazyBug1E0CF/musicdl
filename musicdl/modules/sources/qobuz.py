@@ -16,8 +16,8 @@ from contextlib import suppress
 from .base import BaseMusicClient
 from ..utils.hosts import QOBUZ_MUSIC_HOSTS
 from ..utils.qobuzutils import QobuzMusicClientUtils
-from urllib.parse import urlencode, urlparse, parse_qs
 from pathvalidate import sanitize_filepath, sanitize_filename
+from urllib.parse import urlencode, urlparse, parse_qs, quote
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, MofNCompleteColumn
 from ..utils import legalizestring, resp2json, usesearchheaderscookies, safeextractfromdict, hostmatchessuffix, obtainhostname, useparseheaderscookies, usedownloadheaderscookies, SongInfo, AudioLinkTester, LyricSearchClient, IOUtils, SongInfoUtils
@@ -154,6 +154,50 @@ class QobuzMusicClient(BaseMusicClient):
             if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
         # return
         return song_info
+    '''_parsewithgdstudioxyzapi'''
+    def _parsewithgdstudioxyzapi(self, search_result: dict, request_overrides: dict = None):
+        # init
+        request_overrides, song_id, headers = request_overrides or {}, str(search_result['id']), {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36", "Accept": "application/json, text/javascript, */*; q=0.01"}
+        music_quality_mapper, get_escaped_value_func = {"27": "999", "7": "999", "6": "740"}, lambda value: quote(str(value).strip(), safe="")
+        get_padded_version_func = lambda version: "".join(part.zfill(2) if len(part) == 1 else part for part in str(version).split("."))
+        build_signature_func = lambda track_id_str, ts9, version, signature_host: hashlib.md5(f"{signature_host}|{get_padded_version_func(version)}|{ts9}|{get_escaped_value_func(track_id_str)}".encode("utf-8")).hexdigest()[-8:].upper()
+        # parse
+        for music_quality in QobuzMusicClientUtils.MUSIC_QUALITIES:
+            music_quality_br, ts9 = music_quality_mapper.get(str(music_quality), "320"), str(int(time.time() * 1000))[:9]
+            payload = {"types": "url", "id": song_id, "source": "qobuz", "br": music_quality_br, "s": build_signature_func(str(song_id), ts9, "2026.5.10", urlparse("https://music.gdstudio.xyz/api.php").netloc)}
+            (resp := self.post("https://music.gdstudio.xyz/api.php", data=payload, headers=headers, timeout=10, **request_overrides)).raise_for_status()
+            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['url'], '')) or not str(download_url).startswith('http'): continue
+            real_music_quality = real_music_quality[0] if isinstance((real_music_quality := parse_qs(urlparse(str(download_url)).query, keep_blank_values=True).get('fmt') or music_quality), list) else real_music_quality
+            download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
+            song_info = SongInfo(
+                raw_data={'search': search_result, 'download': download_result, 'lyric': {}, 'quality': real_music_quality}, source=self.source, song_name=legalizestring(search_result.get('title')), singers=legalizestring(safeextractfromdict(search_result, ['performer', 'name'], None)), album=legalizestring(safeextractfromdict(search_result, ['album', 'title'], None)), ext=download_url_status['ext'], file_size_bytes=download_url_status['file_size_bytes'], 
+                file_size=download_url_status['file_size'], identifier=song_id, duration_s=int(float(search_result.get('duration') or 0)), duration=SongInfoUtils.seconds2hms(int(float(search_result.get('duration') or 0))), lyric=None, cover_url=safeextractfromdict(search_result, ['album', 'image', 'large'], None), download_url=download_url_status['download_url'], download_url_status=download_url_status, 
+            )
+            if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
+        # return
+        return song_info
+    '''_parsewithgdstudioorgapi'''
+    def _parsewithgdstudioorgapi(self, search_result: dict, request_overrides: dict = None):
+        # init
+        request_overrides, song_id, headers = request_overrides or {}, str(search_result['id']), {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36", "Accept": "application/json, text/javascript, */*; q=0.01"}
+        music_quality_mapper, get_escaped_value_func = {"27": "999", "7": "999", "6": "740"}, lambda value: quote(str(value).strip(), safe="")
+        get_padded_version_func = lambda version: "".join(part.zfill(2) if len(part) == 1 else part for part in str(version).split("."))
+        build_signature_func = lambda track_id_str, ts9, version, signature_host: hashlib.md5(f"{signature_host}|{get_padded_version_func(version)}|{ts9}|{get_escaped_value_func(track_id_str)}".encode("utf-8")).hexdigest()[-8:].upper()
+        # parse
+        for music_quality in QobuzMusicClientUtils.MUSIC_QUALITIES:
+            music_quality_br, ts9 = music_quality_mapper.get(str(music_quality), "320"), str(int(time.time() * 1000))[:9]
+            payload = {"types": "url", "id": song_id, "source": "qobuz", "br": music_quality_br, "s": build_signature_func(str(song_id), ts9, "2026.5.10", urlparse("https://music.gdstudio.org/api.php").netloc)}
+            (resp := self.post("https://music.gdstudio.org/api.php", data=payload, headers=headers, timeout=10, **request_overrides)).raise_for_status()
+            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['url'], '')) or not str(download_url).startswith('http'): continue
+            real_music_quality = real_music_quality[0] if isinstance((real_music_quality := parse_qs(urlparse(str(download_url)).query, keep_blank_values=True).get('fmt') or music_quality), list) else real_music_quality
+            download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
+            song_info = SongInfo(
+                raw_data={'search': search_result, 'download': download_result, 'lyric': {}, 'quality': real_music_quality}, source=self.source, song_name=legalizestring(search_result.get('title')), singers=legalizestring(safeextractfromdict(search_result, ['performer', 'name'], None)), album=legalizestring(safeextractfromdict(search_result, ['album', 'title'], None)), ext=download_url_status['ext'], file_size_bytes=download_url_status['file_size_bytes'], 
+                file_size=download_url_status['file_size'], identifier=song_id, duration_s=int(float(search_result.get('duration') or 0)), duration=SongInfoUtils.seconds2hms(int(float(search_result.get('duration') or 0))), lyric=None, cover_url=safeextractfromdict(search_result, ['album', 'image', 'large'], None), download_url=download_url_status['download_url'], download_url_status=download_url_status, 
+            )
+            if song_info.with_valid_download_url and song_info.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
+        # return
+        return song_info
     '''_parsewithzarzapi'''
     def _parsewithzarzapi(self, search_result: dict, request_overrides: dict = None):
         # init
@@ -220,7 +264,7 @@ class QobuzMusicClient(BaseMusicClient):
     '''_parsewiththirdpartapis'''
     def _parsewiththirdpartapis(self, search_result: dict, request_overrides: dict = None):
         if QobuzMusicClientUtils.get_token_func(self.default_headers, "X-User-Auth-Token", "x-user-auth-token"): return SongInfo(source=self.source, raw_data={'quality': QobuzMusicClientUtils.MUSIC_QUALITIES[-1]})
-        for parser_func in [self._parsewithsquidapi, self._parsewithzarzapi, self._parsewithmonochromeapi, self._parsewithmusicdlapi, self._parsewithwjheapi, self._parsewithdabmusicapi, self._parsewithdabyeetsuapi]:
+        for parser_func in [self._parsewithmonochromeapi, self._parsewithmusicdlapi, self._parsewithsquidapi, self._parsewithzarzapi, self._parsewithgdstudioxyzapi, self._parsewithgdstudioorgapi, self._parsewithwjheapi, self._parsewithdabmusicapi, self._parsewithdabyeetsuapi]:
             song_info_flac = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}, 'quality': QobuzMusicClientUtils.MUSIC_QUALITIES[-1]})
             with suppress(Exception): song_info_flac = parser_func(search_result, request_overrides)
             if song_info_flac.with_valid_download_url and song_info_flac.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
@@ -263,11 +307,15 @@ class QobuzMusicClient(BaseMusicClient):
         # init
         request_overrides, lossless_quality_is_sufficient = request_overrides or {}, False if QobuzMusicClientUtils.get_token_func(self.default_headers, "X-User-Auth-Token", "x-user-auth-token") else True
         QobuzMusicClientUtils.initsearchappid(self.session, headers=self.default_headers, cookies=self.default_cookies, request_overrides=request_overrides)
+        page_no = int(float(parse_qs(urlparse(url=search_url).query, keep_blank_values=True).get('offset')[0]) / self.search_size_per_page) + 1
         # successful
         try:
             # --search results
             (resp := self.get(search_url, headers={**self.default_headers, **{"X-App-Id": QobuzMusicClientUtils.SEARCH_APP_ID}}, **request_overrides)).raise_for_status()
-            for search_result in resp2json(resp)['tracks']['items']:
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(resp2json(resp)['tracks']['items']):
+                # --update progress
+                progress.update(task_id, description=f'{self.source}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}', completed=search_result_idx+1, total=search_result_idx+1)
                 # --init song info
                 song_info = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}, 'quality': QobuzMusicClientUtils.MUSIC_QUALITIES[-1]})
                 # --parse with third part apis

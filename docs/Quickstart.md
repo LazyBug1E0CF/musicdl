@@ -410,7 +410,7 @@ AppleMusicClient,      DeezerMusicClient,       FiveSingMusicClient,    JamendoM
 KuwoMusicClient,       KugouMusicClient,        MiguMusicClient,        NeteaseMusicClient,      QQMusicClient,
 QianqianMusicClient,   QobuzMusicClient,        SoundCloudMusicClient,  StreetVoiceMusicClient,  SodaMusicClient,
 SpotifyMusicClient,    TIDALMusicClient,        FMAMusicClient,         JioSaavnMusicClient,     BodianMusicClient,
-SunoMusicClient,
+SunoMusicClient,       MOOVMusicClient,
 ```
 
 You can download a supported playlist directly from the terminal:
@@ -441,6 +441,8 @@ musicdl -p "https://www.kuwo.cn/playlist_detail/2358858706" -m KuwoMusicClient
 musicdl -p "https://www.kugou.com/yy/special/single/3280341.html" -m KugouMusicClient
 # Parse and Download Migu Music Playlist
 musicdl -p "https://music.migu.cn/v5/#/playlist?playlistId=228114498&playlistType=ordinary" -m MiguMusicClient
+# Parse and Download MOOV Music Playlist
+musicdl -p "https://moov.hk/?utm_source=ios&utm_medium=copylink&utm_campaign=sharing_UPL-6742190#/playlist/PP1000000965" -m MOOVMusicClient -i "{'MOOVMusicClient': {'default_parse_cookies': your_vip_cookies_with_str_or_dict_format}}"
 # Parse and Download NetEase Music Playlist
 musicdl -p "https://music.163.com/#/playlist?id=3039971654" -m NeteaseMusicClient
 # Parse and Download QQ Music Playlist

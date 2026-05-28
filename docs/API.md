@@ -349,6 +349,7 @@ End users usually do not create this class directly. Instead, they use subclasse
 - `musicdl.modules.sources.KugouMusicClient`
 - `musicdl.modules.sources.KuwoMusicClient`
 - `musicdl.modules.sources.MiguMusicClient`
+- `musicdl.modules.sources.MOOVMusicClient`
 - `musicdl.modules.sources.NeteaseMusicClient`
 - `musicdl.modules.sources.OpenGameArtMusicClient`
 - `musicdl.modules.sources.QianqianMusicClient`
@@ -361,6 +362,7 @@ End users usually do not create this class directly. Instead, they use subclasse
 - `musicdl.modules.sources.SunoMusicClient`
 - `musicdl.modules.sources.TIDALMusicClient`
 - `musicdl.modules.sources.YouTubeMusicClient`
+- `musicdl.modules.thirdpartysites.AlgerMusicClient`
 - `musicdl.modules.thirdpartysites.BuguyyMusicClient`
 - `musicdl.modules.thirdpartysites.FiveSongMusicClient`
 - `musicdl.modules.thirdpartysites.FangpiMusicClient`

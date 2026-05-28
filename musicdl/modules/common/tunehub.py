@@ -23,13 +23,12 @@ class TuneHubMusicClient(BaseMusicClient):
     ALLOWED_SITES = ['netease', 'qq', 'kuwo', 'kugou', 'migu'][:3] # it seems kugou and migu are useless, recorded in 2026-01-28
     TUNEHUB_API_MUSIC_QUALITIES = ['flac24bit', 'flac', '320k', '128k']
     METING_API_MUSIC_QUALITIES = ['400', '380', '320', '128']
-    REQUEST_API_KEYS = ['dGhfZDgzYzY4YjA5NDVlYzYxMjZjNDQxMzkwN2MxYzc3MmI3YmI3ZGUwODU4NWI0N2Y1', 'dGhfZmExMzdmMTBjODllYzRjNGJjNjljYmU3MzQzZWM1NzFhZDliZWUxM2EyZTM0NWZj']
-    EXPIRED_REQUEST_API_KEYS = ['dGhfOGYwMGQ4NzA5ZGJhOWQ0NDgwYmExOTE2NjgxNDdlMWI3YjkzNjkyMDkyMGZhNjZm', 'dGhfYWQ0NjM3YTIzNWI2ZjRlODUxNGU2ZThkMjU3Y2I0MjY0ODY2NjYyOTFiZDgxNzc0']
-    def __init__(self, **kwargs):
+    REQUEST_API_KEYS = ['charlespikachudGhfZGQ2YzNmZDFhZjI1ZTkyNTZmODY5YjU4MzkyNjhiZGNhMjlhYjcwZGY5ZmU4NWYy']
+    def __init__(self, tunehub_api_key: str = None, **kwargs):
         self.allowed_music_sources = list(set(kwargs.pop('allowed_music_sources', TuneHubMusicClient.ALLOWED_SITES)))
         super(TuneHubMusicClient, self).__init__(**kwargs)
-        decrypt_func = lambda t: base64.b64decode(str(t).encode('utf-8')).decode('utf-8')
-        self.default_search_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'X-API-Key': decrypt_func(random.choice(TuneHubMusicClient.REQUEST_API_KEYS))}
+        tunehub_api_key = tunehub_api_key if tunehub_api_key else (lambda t: base64.b64decode(str(t)[14:].encode('utf-8')).decode('utf-8'))(random.choice(TuneHubMusicClient.REQUEST_API_KEYS))
+        self.default_search_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'X-API-Key': tunehub_api_key}
         self.default_download_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36'}
         self.default_headers = self.default_search_headers
         self._initsession()
@@ -70,17 +69,21 @@ class TuneHubMusicClient(BaseMusicClient):
     @usesearchheaderscookies
     def _search(self, keyword: str = '', search_url: str | dict = None, request_overrides: dict = None, song_infos: list = [], progress: Progress = None, progress_id: int = 0):
         # init
-        request_overrides = request_overrides or {}
+        request_overrides, page_no = request_overrides or {}, 1 if isinstance(search_url, str) else search_url['rule']['page']
         # successful
         try:
             # --search results
             search_results = search_url['search_api'](**search_url['rule']) if isinstance(search_url, dict) else resp2json(self.get(search_url, **request_overrides))
-            for search_result in search_results:
-                # --download results
+            task_id = progress.add_task(f"{self.source}._search >>> Start to process the 0th search result on page {page_no}", total=None, completed=0)
+            for search_result_idx, search_result in enumerate(search_results):
+                # --init song info
                 if not isinstance(search_result, dict) or ('id' not in search_result and 'url' not in search_result): continue
                 if 'id' not in search_result: search_result['id'] = parse_qs(urlparse(str(search_result['url'])).query, keep_blank_values=True).get('id')[0]
                 if 'source' not in search_result: search_result['source'] = parse_qs(urlparse(str(search_result['url'])).query, keep_blank_values=True).get('server')[0]
                 song_info = SongInfo(source=self.source, root_source=search_result['source'], raw_data={'search': search_result, 'download': {}, 'lyric': {}})
+                # --update progress
+                progress.update(task_id, description=f"{self.source}.{search_result['source']}._search >>> Start to process the {search_result_idx+1}th search result on page {page_no}", completed=search_result_idx+1, total=search_result_idx+1)
+                # --download results
                 tunehub_to_meting_server_mapper = {'netease': 'netease', 'qq': 'tencent', 'kuwo': 'kuwo', 'kugou': 'kugou', 'migu': 'migu'}
                 if search_result['source'] in {'netease'}:
                     for br in TuneHubMusicClient.METING_API_MUSIC_QUALITIES:

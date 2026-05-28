@@ -458,6 +458,63 @@ MiguMusicClient can be used directly without installing any extra CLI utilities 
   music_client.download(song_infos=song_infos)
   ```
 
+#### MOOVMusicClient
+
+[MOOV Music](https://moov.hk/) is a Hong Kong music streaming platform known for its strong Cantopop catalogue, 24-bit lossless audio, and rich collection of music videos and concert content.
+
+MOOVMusicClient provides music download support for the platform mentioned above.
+
+MOOVMusicClient works out of the box without requiring additional command-line tools such as ffmpeg or N_m3u8DL-RE. Simply install musicdl via pip, and you are ready to use it.
+
+(1) Command-Line Usage
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  `musicdl -m MOOVMusicClient -i "{'MOOVMusicClient': {'default_search_cookies': 'YOUR_COOKIES'}}"`
+  
+  The cookies must include the `MOOVUUID` and `MTGSESSIONID` fields, like this:
+  
+  `MOOVUUID=7A1DA713-6CC7-461F-91BD-595DF18C159F; MTGSESSIONID=xxx`
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  `musicdl -p "https://app.moov.hk/xIeFa" -m MOOVMusicClient -i "{'MOOVMusicClient': {'default_parse_cookies': 'YOUR_COOKIES'}}"`
+  
+  Please note that if the playlist was created by yourself, for example "https://moov.hk/#/collection/UPL/list/7574202", it is recommended to click Share and use the shared link to parse and download the playlist.
+
+(2) Invoke It in Python
+
+- Simple usage for searching and downloading songs, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'MOOVMusicClient': {
+        'default_search_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['MOOVMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  music_client.startcmdui()
+  ```
+
+- Simple usage for playlist parsing and downloading, with login cookies:
+
+  ```python
+  from musicdl import musicdl
+  
+  your_vip_cookies_with_str_or_dict_format = ''
+  init_music_clients_cfg = {
+    'MOOVMusicClient': {
+        'default_parse_cookies': your_vip_cookies_with_str_or_dict_format,
+    }
+  }
+  music_client = musicdl.MusicClient(music_sources=['MOOVMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
+  song_infos = music_client.parseplaylist("https://app.moov.hk/xIeFa")
+  music_client.download(song_infos=song_infos)
+  ```
+
 #### NeteaseMusicClient (Built-in Premium Account)
 
 [NetEase Cloud Music](https://music.163.com/) is one of China’s most popular music streaming platforms, known for its vast song library, personalized recommendations, and active user community.
@@ -1195,7 +1252,7 @@ JamendoMusicClient requires only a pip installation of musicdl, with no addition
   music_client.download(song_infos=song_infos)
   ```
 
-#### JooxMusicClient
+#### JooxMusicClient (Built-in Premium Account)
 
 [JOOX](https://www.joox.com/intl) is a music streaming platform by Tencent that offers over 40 million songs, playlists, karaoke, live broadcasting, and social audio features.
 
@@ -2286,7 +2343,7 @@ To use TuneHubMusicClient, all you need is pip install musicdl. You don’t have
 
 - Restrict Music Sources and Number of Results
 
-  `musicdl -m TuneHubMusicClient -i "{'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease']}}"`
+  `musicdl -m TuneHubMusicClient -i "{'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease'], 'tunehub_api_key': 'YOUR_OWN_API_KEY'}}"`
 
 (2) Invoke It in Python
 
@@ -2305,7 +2362,7 @@ To use TuneHubMusicClient, all you need is pip install musicdl. You don’t have
   from musicdl import musicdl
 
   # allowed_music_sources can be set to any subset (i.e., any combination) of ['qq', 'netease', 'kuwo']
-  init_music_clients_cfg = {'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease']}}
+  init_music_clients_cfg = {'TuneHubMusicClient': {'search_size_per_source': 5, 'allowed_music_sources': ['qq', 'netease'], 'tunehub_api_key': 'YOUR_OWN_API_KEY'}}
   music_client = musicdl.MusicClient(music_sources=['TuneHubMusicClient'], init_music_clients_cfg=init_music_clients_cfg)
   music_client.startcmdui()
   ```
@@ -2368,6 +2425,31 @@ WJHEMusicClient does not depend on external command-line tools such as ffmpeg or
   ```
 
 ## Unofficial Download Sites / Scrapers
+
+#### AlgerMusicClient
+
+[Alger Music](http://music.alger.fun/#/) is a clean and modern web-based music player for searching, streaming, and enjoying music online, with music sources provided by NetEase Cloud Music.
+
+When downloading music from Alger Music, AlgerMusicClient is the recommended tool.
+
+No additional CLI tools such as ffmpeg or N_m3u8DL-RE are required, just run pip install musicdl and start using AlgerMusicClient right away.
+
+(1) Command-Line Usage
+
+- Search for and Download Playable Music Files from Websites
+
+  `musicdl -m AlgerMusicClient`
+
+(2) Invoke It in Python
+
+- Search for and Download Playable Music Files from Websites
+
+  ```python
+  from musicdl import musicdl
+
+  music_client = musicdl.MusicClient(music_sources=['AlgerMusicClient'])
+  music_client.startcmdui()
+  ```
 
 #### BuguyyMusicClient
 
