@@ -118,8 +118,14 @@ textarea {
 }
 
 .hero-copy {
-  margin: 132px auto 34px;
+  margin-top: 132px;
+  margin-bottom: 34px;
+  margin-left: auto;
+  margin-right: auto;
   text-align: center;
+  overflow: hidden;
+  max-height: 500px;
+  transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease, margin-top 0.3s ease, margin-bottom 0.3s ease;
 }
 
 .hero-copy h1 {
@@ -147,6 +153,15 @@ textarea {
 .hero-copy p {
   margin: 18px 0 0;
   font-size: 19px;
+}
+
+.hero-hidden {
+  opacity: 0;
+  transform: translateY(-20px);
+  pointer-events: none;
+  max-height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .search-console {
@@ -197,6 +212,7 @@ textarea {
   border: 1px solid rgba(122, 137, 190, 0.2);
   box-shadow: 0 24px 60px rgba(87, 98, 150, 0.18);
   backdrop-filter: blur(18px);
+  transition: min-height 0.4s ease, max-width 0.4s ease, padding 0.4s ease, box-shadow 0.4s ease;
 }
 
 .search-console-compact .search-bar {
@@ -217,6 +233,7 @@ textarea {
   background: transparent;
   font-size: clamp(22px, 2vw, 32px);
   color: #141b36;
+  transition: font-size 0.4s ease;
 }
 
 .search-console-compact .search-bar input {
@@ -251,6 +268,7 @@ textarea {
   border-radius: 58px;
   font-size: 18px;
   font-weight: 600;
+  transition: min-height 0.4s ease, padding 0.4s ease, font-size 0.4s ease;
 }
 
 .search-console-compact .search-bar .primary-gradient-button {
@@ -283,6 +301,13 @@ textarea {
 
 .source-picker {
   flex: 1 1 720px;
+}
+
+.source-picker-card {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(122, 137, 190, 0.18);
+  border-radius: 18px;
+  padding: 20px 24px;
 }
 
 .section-label {
@@ -340,6 +365,51 @@ textarea {
 
 .source-group {
   margin-bottom: 18px;
+  max-height: 800px;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.35s ease;
+}
+
+.source-group-collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+}
+
+.collapsed-sources-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.collapsed-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(120, 132, 180, 0.18);
+  font-size: 12px;
+}
+
+.collapsed-expand-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(90, 98, 145, 0.06);
+  color: #4a5170;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.collapsed-expand-button:hover {
+  background: rgba(90, 98, 145, 0.12);
 }
 
 .source-group-header {
@@ -421,6 +491,27 @@ textarea {
   width: min(960px, 100%);
   margin: 24px auto 0;
   border-radius: 14px;
+}
+
+.results-panel-wrapper {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.results-panel-visible {
+  animation: resultsFadeIn 0.3s ease forwards;
+  pointer-events: auto;
+}
+
+@keyframes resultsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .result-panel {
@@ -654,6 +745,32 @@ textarea {
 
 .spin-icon {
   animation: spin 0.9s linear infinite;
+}
+
+.play-progress-wrap {
+  position: relative;
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+}
+
+.play-progress-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.play-progress-ring circle {
+  transition: stroke-dashoffset 0.15s linear;
+}
+
+.play-progress-wrap .round-action {
+  width: 30px;
+  height: 30px;
+  margin: auto;
 }
 
 @keyframes spin {

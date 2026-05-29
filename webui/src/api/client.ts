@@ -35,7 +35,7 @@ interface PlaybackResponse {
   expires_at: string;
 }
 
-export const SEARCH_BATCH_SIZE_PER_SOURCE = 2;
+export const SEARCH_BATCH_SIZE_PER_SOURCE = 5;
 const SEARCH_REQUEST_TIMEOUT_SECONDS = 6;
 
 async function readError(res: Response): Promise<string> {

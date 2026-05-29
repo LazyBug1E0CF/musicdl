@@ -6,6 +6,7 @@ import type { SongResult } from '../types';
 interface BottomPlayerProps {
   currentSong?: SongResult;
   playbackUrl?: string;
+  isPlaying?: boolean;
   queue: SongResult[];
   currentIndex: number;
   playlistOpen: boolean;
@@ -13,6 +14,7 @@ interface BottomPlayerProps {
   onSelectTrack: (index: number) => void;
   onPrevious: () => void;
   onNext: () => void;
+  onPlaybackState: (progress: number, playing: boolean) => void;
   labels: {
     noPlaying: string;
     play: string;
@@ -35,6 +37,7 @@ function formatTime(value: number): string {
 export function BottomPlayer({
   currentSong,
   playbackUrl,
+  isPlaying,
   queue,
   currentIndex,
   playlistOpen,
@@ -42,6 +45,7 @@ export function BottomPlayer({
   onSelectTrack,
   onPrevious,
   onNext,
+  onPlaybackState,
   labels,
 }: BottomPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -70,6 +74,16 @@ export function BottomPlayer({
     audio.volume = volume;
     audio.play().catch(() => setPlaying(false));
   }, [playbackUrl]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || typeof isPlaying !== 'boolean') return;
+    if (isPlaying && audio.paused && audio.src) {
+      audio.play().catch(() => {});
+    } else if (!isPlaying && !audio.paused) {
+      audio.pause();
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
@@ -171,10 +185,18 @@ export function BottomPlayer({
         <audio
           ref={audioRef}
           preload="metadata"
-          onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || 0)}
-          onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime || 0)}
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
+          onLoadedMetadata={(event) => {
+            const dur = event.currentTarget.duration || 0;
+            setDuration(dur);
+          }}
+          onTimeUpdate={(event) => {
+            const ct = event.currentTarget.currentTime || 0;
+            const dur = event.currentTarget.duration || 0;
+            setCurrentTime(ct);
+            onPlaybackState(dur > 0 ? ct / dur : 0, !event.currentTarget.paused);
+          }}
+          onPlay={() => { setPlaying(true); onPlaybackState(audioRef.current ? audioRef.current.currentTime / (audioRef.current.duration || 1) : 0, true); }}
+          onPause={() => { setPlaying(false); onPlaybackState(audioRef.current ? audioRef.current.currentTime / (audioRef.current.duration || 1) : 0, false); }}
           onEnded={() => {
             setPlaying(false);
             if (hasNext) onNext();

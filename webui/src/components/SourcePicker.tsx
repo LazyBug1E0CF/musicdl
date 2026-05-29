@@ -10,7 +10,8 @@ interface SourcePickerProps {
   selected: string[];
   sourceCookies: Record<string, string>;
   onChange: (sources: string[]) => void;
-  label: string;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 function SourceGroupSection({
@@ -18,16 +19,18 @@ function SourceGroupSection({
   selected,
   sourceCookies,
   onToggle,
+  collapsed,
 }: {
   group: SourceGroup;
   selected: string[];
   sourceCookies: Record<string, string>;
   onToggle: (source: string) => void;
+  collapsed?: boolean;
 }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="source-group">
+    <div className={collapsed ? 'source-group source-group-collapsed' : 'source-group'}>
       <button
         className="source-group-header"
         type="button"
@@ -62,7 +65,7 @@ function SourceGroupSection({
   );
 }
 
-export function SourcePicker({ options, selected, sourceCookies, onChange, label }: SourcePickerProps) {
+export function SourcePicker({ options, selected, sourceCookies, onChange, collapsed = false, onToggleCollapse }: SourcePickerProps) {
   const groups = groupSourceOptions(options);
 
   function toggle(source: string) {
@@ -75,7 +78,6 @@ export function SourcePicker({ options, selected, sourceCookies, onChange, label
 
   return (
     <div className="source-picker">
-      <span className="section-label">{label}</span>
       {groups.map((group) => (
         <SourceGroupSection
           key={group.key}
@@ -83,8 +85,36 @@ export function SourcePicker({ options, selected, sourceCookies, onChange, label
           selected={selected}
           sourceCookies={sourceCookies}
           onToggle={toggle}
+          collapsed={collapsed}
         />
       ))}
+      {!collapsed && (
+        <div className="collapsed-sources-row">
+          <button
+            className="collapsed-expand-button"
+            type="button"
+            onClick={onToggleCollapse}
+          >
+            收起
+          </button>
+        </div>
+      )}
+      {collapsed && (
+        <div className="collapsed-sources-row">
+          {selected.map((s) => (
+            <span key={s} className="collapsed-chip">
+              <SourceBadge source={s} compact />
+            </span>
+          ))}
+          <button
+            className="collapsed-expand-button"
+            type="button"
+            onClick={onToggleCollapse}
+          >
+            展开
+          </button>
+        </div>
+      )}
     </div>
   );
 }

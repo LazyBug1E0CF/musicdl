@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Alert } from 'antd';
 import { Search, Settings } from 'lucide-react';
 import type { SearchParams, SongResult, SourceOption, WebUISettings } from '../types';
@@ -18,11 +19,15 @@ interface SearchPageProps {
   resolvingId?: string;
   downloadingIds: string[];
   error?: string;
+  currentSong?: SongResult;
+  playbackProgress?: number;
+  isPlaying?: boolean;
   onParamsChange: (params: Partial<SearchParams>) => void;
   onSearch: () => void;
   onLoadMore: () => void;
   onOpenSettings: () => void;
   onPlay: (song: SongResult) => void;
+  onTogglePause: () => void;
   onDownload: (song: SongResult) => void;
   labels: Record<string, string>;
 }
@@ -40,16 +45,30 @@ export function SearchPage({
   resolvingId,
   downloadingIds,
   error,
+  currentSong,
+  playbackProgress,
+  isPlaying,
   onParamsChange,
   onSearch,
   onLoadMore,
   onOpenSettings,
   onPlay,
+  onTogglePause,
   onDownload,
   labels,
 }: SearchPageProps) {
   const hasResults = results.length > 0;
   const showResultsPanel = loading || hasResults || hasSearched;
+
+  const [sourceCardCollapsed, setSourceCardCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (showResultsPanel) {
+      setSourceCardCollapsed(true);
+    } else {
+      setSourceCardCollapsed(false);
+    }
+  }, [showResultsPanel]);
 
   return (
     <main className={showResultsPanel ? 'search-page search-page-results' : 'search-page'}>
@@ -57,15 +76,13 @@ export function SearchPage({
         <Settings size={22} />
       </button>
 
-      {!showResultsPanel && (
-        <section className="hero-copy">
-          <h1>
-            {labels.heroPrefix}
-            <span>{labels.heroAccent}</span>
-          </h1>
-          <p>{labels.heroSubtitle}</p>
-        </section>
-      )}
+      <section className={showResultsPanel ? 'hero-copy hero-hidden' : 'hero-copy'} aria-hidden={showResultsPanel}>
+        <h1>
+          {labels.heroPrefix}
+          <span>{labels.heroAccent}</span>
+        </h1>
+        <p>{labels.heroSubtitle}</p>
+      </section>
 
       <section className={showResultsPanel ? 'search-console search-console-compact' : 'search-console'}>
         <div className="search-bar">
@@ -90,18 +107,21 @@ export function SearchPage({
       </section>
 
       <div className="search-options-line">
-        <SourcePicker
-          options={sourceOptions}
-          selected={params.sources}
-          sourceCookies={settings.sourceCookies}
-          onChange={(sources) => onParamsChange({ sources })}
-          label={labels.platformSources}
-        />
+        <div className="source-picker-card">
+          <SourcePicker
+            options={sourceOptions}
+            selected={params.sources}
+            sourceCookies={settings.sourceCookies}
+            onChange={(sources) => onParamsChange({ sources })}
+            collapsed={sourceCardCollapsed}
+            onToggleCollapse={() => setSourceCardCollapsed((prev) => !prev)}
+          />
+        </div>
       </div>
 
       {error && <Alert className="floating-error" type="error" message={error} showIcon closable />}
 
-      {showResultsPanel && (
+      <div className={showResultsPanel ? 'results-panel-wrapper results-panel-visible' : 'results-panel-wrapper'}>
         <ResultList
           results={results}
           loading={loading}
@@ -111,7 +131,11 @@ export function SearchPage({
           resolvingId={resolvingId}
           downloadingIds={downloadingIds}
           onPlay={onPlay}
+          onTogglePause={onTogglePause}
           onDownload={onDownload}
+          currentSong={currentSong}
+          playbackProgress={playbackProgress}
+          isPlaying={isPlaying}
           onLoadMore={onLoadMore}
           labels={{
             songName: labels.songName,
@@ -126,12 +150,13 @@ export function SearchPage({
             actions: labels.actions,
             noResult: labels.noResult,
             play: labels.play,
+            pause: labels.pause,
             download: labels.download,
             loadingMore: labels.loadingMore,
             noMoreResults: labels.noMoreResults,
           }}
         />
-      )}
+      </div>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Empty, Spin } from 'antd';
-import { Download, Loader2, Play } from 'lucide-react';
+import { Download, Loader2, Pause, Play } from 'lucide-react';
 import type { SongResult } from '../types';
 import { bitrateTagClassName, formatTagClassName } from '../utils/resultMetadata';
 import { SourceBadge } from './SourceBadge';
@@ -13,7 +13,11 @@ interface ResultListProps {
   effectiveMaxResults: number;
   resolvingId?: string;
   downloadingIds: string[];
+  currentSong?: SongResult;
+  playbackProgress?: number;
+  isPlaying?: boolean;
   onPlay: (song: SongResult) => void;
+  onTogglePause: () => void;
   onDownload: (song: SongResult) => void;
   onLoadMore: () => void;
   labels: {
@@ -29,6 +33,7 @@ interface ResultListProps {
     actions: string;
     noResult: string;
     play: string;
+    pause: string;
     download: string;
     loadingMore: string;
     noMoreResults: string;
@@ -50,7 +55,11 @@ export function ResultList({
   effectiveMaxResults,
   resolvingId,
   downloadingIds,
+  currentSong,
+  playbackProgress,
+  isPlaying,
   onPlay,
+  onTogglePause,
   onDownload,
   onLoadMore,
   labels,
@@ -113,15 +122,43 @@ export function ResultList({
                 <span>{song.duration}</span>
                 <SourceBadge source={song.source} compact />
                 <div className="row-actions">
-                  <button
-                    className="round-action"
-                    type="button"
-                    onClick={() => onPlay(song)}
-                    disabled={resolvingId === song.id}
-                    aria-label={labels.play}
-                  >
-                    {resolvingId === song.id ? <Loader2 className="spin-icon" size={18} /> : <Play size={18} />}
-                  </button>
+                  {currentSong?.id === song.id && isPlaying ? (
+                    <span className="play-progress-wrap">
+                      <svg className="play-progress-ring" viewBox="0 0 40 40">
+                        <circle cx="20" cy="20" r="17" fill="none" stroke="rgba(120,132,180,0.18)" strokeWidth="2.5" />
+                        <circle
+                          cx="20"
+                          cy="20"
+                          r="17"
+                          fill="none"
+                          stroke="#4c5cff"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 17}`}
+                          strokeDashoffset={`${2 * Math.PI * 17 * (1 - (playbackProgress || 0))}`}
+                          transform="rotate(-90 20 20)"
+                        />
+                      </svg>
+                      <button
+                        className="round-action"
+                        type="button"
+                        onClick={onTogglePause}
+                        aria-label={labels.pause}
+                      >
+                        <Pause size={16} />
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      className="round-action"
+                      type="button"
+                      onClick={() => currentSong?.id === song.id ? onTogglePause() : onPlay(song)}
+                      disabled={resolvingId === song.id}
+                      aria-label={currentSong?.id === song.id ? labels.play : labels.play}
+                    >
+                      {resolvingId === song.id ? <Loader2 className="spin-icon" size={18} /> : <Play size={18} />}
+                    </button>
+                  )}
                   <button
                     className="round-action"
                     type="button"

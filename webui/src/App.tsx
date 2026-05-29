@@ -19,6 +19,8 @@ export default function App() {
     hasSearched,
     currentSong,
     playbackUrl,
+    playbackProgress,
+    isPlaying,
     downloadTasks,
     loading,
     loadingMore,
@@ -43,6 +45,8 @@ export default function App() {
     playSong,
     playQueueIndex,
     playAdjacent,
+    togglePause,
+    setPlaybackState,
     enqueueDownload,
   } = useAppStore();
 
@@ -94,8 +98,12 @@ export default function App() {
           onLoadMore={() => void loadMoreResults()}
           onOpenSettings={() => setView('settings')}
           onPlay={(song) => void playSong(song)}
+          onTogglePause={() => togglePause()}
           onDownload={(song) => void enqueueDownload(song)}
           labels={labels}
+          currentSong={currentSong}
+          playbackProgress={playbackProgress}
+          isPlaying={isPlaying}
         />
       )}
 
@@ -113,6 +121,7 @@ export default function App() {
       <BottomPlayer
         currentSong={currentSong}
         playbackUrl={playbackUrl}
+        isPlaying={isPlaying}
         queue={playbackQueue}
         currentIndex={currentIndex}
         playlistOpen={playlistOpen}
@@ -120,6 +129,7 @@ export default function App() {
         onSelectTrack={(index) => void playQueueIndex(index)}
         onPrevious={() => void playAdjacent(-1)}
         onNext={() => void playAdjacent(1)}
+        onPlaybackState={(progress, playing) => setPlaybackState(progress, playing)}
         labels={{
           noPlaying: t('noPlaying'),
           play: t('play'),

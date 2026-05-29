@@ -121,6 +121,8 @@ interface AppState {
   hasSearched: boolean;
   currentSong?: SongResult;
   playbackUrl?: string;
+  playbackProgress: number;
+  isPlaying: boolean;
   downloadTasks: DownloadTask[];
   loading: boolean;
   loadingMore: boolean;
@@ -146,6 +148,9 @@ interface AppState {
   playSong: (song: SongResult) => Promise<void>;
   playQueueIndex: (index: number) => Promise<void>;
   playAdjacent: (direction: -1 | 1) => Promise<void>;
+  stopPlayback: () => void;
+  togglePause: () => void;
+  setPlaybackState: (progress: number, playing: boolean) => void;
   enqueueDownload: (song: SongResult) => Promise<void>;
   upsertTask: (task: DownloadTask) => void;
 }
@@ -159,6 +164,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   playbackQueue: [],
   currentIndex: -1,
   hasSearched: false,
+  playbackProgress: 0,
+  isPlaying: false,
   downloadTasks: [],
   loading: false,
   loadingMore: false,
@@ -322,6 +329,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     const nextIndex = state.currentIndex + direction;
     if (nextIndex < 0 || nextIndex >= state.playbackQueue.length) return;
     await get().playQueueIndex(nextIndex);
+  },
+  stopPlayback: () => {
+    set({ currentSong: undefined, playbackUrl: undefined, playbackProgress: 0, isPlaying: false });
+  },
+  togglePause: () => {
+    set((state) => ({ isPlaying: !state.isPlaying }));
+  },
+  setPlaybackState: (progress, playing) => {
+    set({ playbackProgress: progress, isPlaying: playing });
   },
   enqueueDownload: async (song) => {
     set((state) => ({
