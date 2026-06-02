@@ -30,9 +30,9 @@ class QQMusicClient(BaseMusicClient):
     def __init__(self, use_encrypted_endpoint: bool = False, **kwargs):
         super(QQMusicClient, self).__init__(**kwargs)
         self.use_encrypted_endpoint = use_encrypted_endpoint
-        self.default_search_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'Referer': 'https://y.qq.com/', 'Origin': 'https://y.qq.com/',}
-        self.default_parse_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'Referer': 'https://y.qq.com/', 'Origin': 'https://y.qq.com/',}
-        self.default_download_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'Referer': 'http://y.qq.com',}
+        self.default_search_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', 'Referer': 'https://y.qq.com/', 'Origin': 'https://y.qq.com/',}
+        self.default_parse_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', 'Referer': 'https://y.qq.com/', 'Origin': 'https://y.qq.com/',}
+        self.default_download_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36', 'Referer': 'http://y.qq.com',}
         self.default_headers = self.default_search_headers
         self._initsession()
     '''_constructsearchurls'''
@@ -87,7 +87,7 @@ class QQMusicClient(BaseMusicClient):
         # parse
         for music_quality in MUSIC_QUALITIES:
             (resp := self.get(f"https://api.xcvts.cn/api/music/qq?apiKey={decrypt_func(random.choice(REQUEST_KEYS))}&mid={song_id}&type={music_quality}", timeout=10, **request_overrides)).raise_for_status()
-            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['data', 'music'], None)) or not str(download_url).startswith('http'): continue
+            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['data', 'music'], None)) or not str(download_url).startswith('http'): break
             lyric = cleanlrc(safeextractfromdict(download_result, ['data', 'lyric'], '') or 'NULL')
             download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
             song_info = SongInfo(
@@ -107,10 +107,10 @@ class QQMusicClient(BaseMusicClient):
         }
         request_overrides, song_id = request_overrides or {}, search_result.get('mid') or search_result.get('songmid')
         if not safeextractfromdict(search_result, ['album', 'title'], None) or search_result.get('albumname'): search_result.update(self._getsongmetainfo(song_id=song_id, request_overrides=request_overrides))
-        # parse
+        # parse (the card id should be applied by yourselves, each card can be used for 1 day)
         for music_quality in MUSIC_QUALITIES:
-            (resp := self.get(f"http://api.liuyunidc.cn/baimusic/musicurl.php?source=tx&musicId={song_id}&quality={music_quality}", headers=headers, timeout=10, **request_overrides)).raise_for_status()
-            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['url'], None)) or not str(download_url).startswith('http'): continue
+            (resp := self.get(f"http://api.liuyunidc.cn/baimusic/musicurl.php?source=tx&musicId={song_id}&quality={music_quality}&card=BAI-153B4JE4I40HSG40H1FP", headers=headers, timeout=10, **request_overrides)).raise_for_status()
+            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['url'], None)) or not str(download_url).startswith('http'): break
             download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
             song_info = SongInfo(
                 raw_data={'search': search_result, 'download': download_result, 'lyric': {}}, source=self.source, song_name=legalizestring(search_result.get('title') or search_result.get('songname')), singers=legalizestring(', '.join([singer.get('name') for singer in (search_result.get('singer', []) or []) if isinstance(singer, dict) and singer.get('name')])), album=legalizestring(safeextractfromdict(search_result, ['album', 'title'], None) or search_result.get('albumname')), ext=download_url_status['ext'], file_size_bytes=download_url_status['file_size_bytes'], 
@@ -130,7 +130,7 @@ class QQMusicClient(BaseMusicClient):
         # parse
         for music_quality in MUSIC_QUALITIES:
             (resp := self.get(f"https://api.317ak.cn/api/yinyue/qqyinyue?ckey={decrypt_func(random.choice(REQUEST_KEYS))}&i={song_id}&br={music_quality}&type=json&lrc=1", headers=headers, timeout=10, **request_overrides)).raise_for_status()
-            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['url'], None)) or not str(download_url).startswith('http'): continue
+            if not (download_url := safeextractfromdict((download_result := resp2json(resp=resp)), ['url'], None)) or not str(download_url).startswith('http'): break
             download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
             song_info = SongInfo(
                 raw_data={'search': search_result, 'download': download_result, 'lyric': {}}, source=self.source, song_name=legalizestring(download_result.get('songName')), singers=legalizestring(download_result.get('artistName')), album=legalizestring(download_result.get('albumName')), ext=download_url_status['ext'], file_size_bytes=download_url_status['file_size_bytes'], file_size=download_url_status['file_size'], 
@@ -284,7 +284,7 @@ class QQMusicClient(BaseMusicClient):
         request_overrides, song_id, song_info = request_overrides or {}, search_result.get('mid') or search_result.get('songmid'), SongInfo(source=self.source)
         if not safeextractfromdict(search_result, ['album', 'title'], None) or search_result.get('albumname'): search_result.update(self._getsongmetainfo(song_id=song_id, request_overrides=request_overrides))
         # parse
-        (resp := self.get(f'https://lpz.chatc.vip/apiqq.php?songmid={song_id}&type=json&br=1', **request_overrides)).raise_for_status()
+        (resp := self.get(f'https://lpz.chatc.vip/apiqq.php?songmid={song_id}&type=json&br=1', verify=False, **request_overrides)).raise_for_status()
         if not (download_url := (download_result := resp2json(resp=resp))['data']['music_url']) or not str(download_url).startswith('http'): return song_info
         download_url_status: dict = self.audio_link_tester.test(url=download_url, request_overrides=request_overrides, renew_session=True)
         lyric = cleanlrc(safeextractfromdict(download_result, ['data', 'lyric'], '') or 'NULL').replace('\\n', '\n')
@@ -313,8 +313,12 @@ class QQMusicClient(BaseMusicClient):
         return song_info
     '''_parsewiththirdpartapis'''
     def _parsewiththirdpartapis(self, search_result: dict, request_overrides: dict = None):
-        if self.default_cookies or request_overrides.get('cookies'): return SongInfo(source=self.source)
-        for parser_func in [self._parsewithliuyunidcapi, self._parsewith317akapi, self._parsewithlpzapi, self._parsewithtangapi, self._parsewithnkiapi, self._parsewithxianyuwapi, self._parsewithxunhuisiapi, self._parsewithcyapi, self._parsewithlxmusicapi, self._parsewithxcvtsapi, self._parsewithvkeysapi, self._parsewithygkingapi, self._parsewithluoyueapi]:
+        if self.default_cookies or (request_overrides := request_overrides or {}).get('cookies'): return SongInfo(source=self.source)
+        l1_parser_funcs = [self._parsewithxcvtsapi, self._parsewithliuyunidcapi, ] # svip
+        l2_parser_funcs = [self._parsewithnkiapi, self._parsewithxianyuwapi, self._parsewithtangapi, self._parsewith317akapi, ] # vip
+        l3_parser_funcs = [self._parsewithcyapi, self._parsewithxunhuisiapi, self._parsewithlxmusicapi, ] # vip account but only mp3 or m4a files can be requested
+        l4_parser_funcs = [self._parsewithvkeysapi, self._parsewithlpzapi, self._parsewithygkingapi, self._parsewithluoyueapi, ] # invalid or unstable accounts
+        for parser_func in (l1_parser_funcs + l2_parser_funcs + l3_parser_funcs + l4_parser_funcs):
             song_info_flac = SongInfo(source=self.source, raw_data={'search': search_result, 'download': {}, 'lyric': {}})
             with suppress(Exception): song_info_flac = parser_func(search_result, request_overrides)
             if song_info_flac.with_valid_download_url and song_info_flac.ext in AudioLinkTester.VALID_AUDIO_EXTS: break
