@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile.api
     environment:
-      CORS_ALLOW_ORIGINS: http://localhost:8080
+      CORS_ALLOW_ORIGINS: http://localhost:18008
       APP_TIMEOUT_SECONDS: 120
       MAX_BODY_BYTES: 2097152
       RATE_LIMIT_REQUESTS: 60
@@ -26,6 +26,6 @@ services:
       context: .
       dockerfile: Dockerfile.ui
     ports:
-      - "8080:80"
+      - "18008:80"
     depends_on:
       - api

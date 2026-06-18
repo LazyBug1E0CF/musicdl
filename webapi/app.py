@@ -40,7 +40,7 @@ RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
 DOWNLOAD_ROOT = Path(os.getenv("DOWNLOAD_ROOT", "./downloads")).resolve()
 CORS_ALLOW_ORIGINS = [
     origin.strip()
-    for origin in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173,http://localhost:8080").split(",")
+    for origin in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost:5173,http://localhost:18008").split(",")
     if origin.strip()
 ]
 SAFE_FILE_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]+')

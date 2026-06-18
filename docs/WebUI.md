@@ -6,7 +6,7 @@ docker compose up -d --build
 ```
 
 访问：
-- UI: `http://localhost:8080`（React WebUI，支持搜索、播放、下载和下载任务进度）
+- UI: `http://localhost:18008`（React WebUI，支持搜索、播放、下载和下载任务进度）
 - API: `http://localhost:8000`
 - 健康检查: `GET /healthz`
 - 就绪检查: `GET /readyz`
