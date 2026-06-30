@@ -65,9 +65,9 @@
 
 # 🎉 What's New
 
+- 2026-06-24: Released musicdl v2.12.9 — fixed and cleaned up a large number of unavailable third-party interfaces, and added many new parsing interfaces with VIP account support, including QQ Music, Kuwo, TIDAL, Qobuz, and others. Also fixed bugs on platforms such as NetEase Cloud Music.
 - 2026-06-21: Released musicdl v2.12.8 — updated third-party API integrations for Deezer, YouTube, Spotify, and Qobuz; fixed the GDStudio music client and upgraded it to the latest API algorithm.
 - 2026-06-16: Released musicdl v2.12.7 — fix the freezing issue that occurs when Kugou, Kuwo, QQ Music, and NetEase Cloud Music access third-party APIs (refer to issues #79).
-- 2026-06-11: Released musicdl v2.12.6 — consolidate the third-party APIs for QQ, Kuwo, Kugou, and NetEase Cloud Music, and optimize the request mechanism to improve the overall pipeline efficiency.
 
 
 # 🎵 Introduction
@@ -164,16 +164,17 @@ If you are a copyright or rights holder and believe that this repository infring
 
 Here are some projects built on top of musicdl,
 
-|  Project (EN)                                  |   Project (CN)          |   WeChat Article                                             |  Project Location                                                                                                |
-|  :----:                                        |   :----:                |   :----:                                                     |  :----:                                                                                                          |
-|  Music downloader GUI                          |   音乐下载器GUI界面     |   [click](https://mp.weixin.qq.com/s/fN1ORyI6lzQFqxf6Zk1oIg) |  [musicdlgui](https://github.com/CharlesPikachu/musicdl/tree/master/examples/musicdlgui)                         |
-|  Singer lyrics analysis                        |   歌手歌词分析          |   [click](https://mp.weixin.qq.com/s/I8Dy7CoM2ThnSpjoUaPtig) |  [singerlyricsanalysis](https://github.com/CharlesPikachu/musicdl/tree/master/examples/singerlyricsanalysis)     |
-|  Lyric-based song snippet retrieval            |   歌词获取歌曲片段      |   [click](https://mp.weixin.qq.com/s/Vmc1IhuhMJ6C5vBwBe43Pg) |  [searchlyrics](https://github.com/CharlesPikachu/musicdl/tree/master/examples/searchlyrics)                     |
+|  Project (EN)                                  |   Project (CN)                        |   WeChat Article                                             |  Project Location                                                                                                                      |
+|  :----:                                        |   :----:                              |   :----:                                                     |  :----:                                                                                                                                |
+|  Modern Web Music Player (Claude.ai)           |   现代化Web音乐播放器 (Claude.ai)     |   [click](https://mp.weixin.qq.com/s/fN1ORyI6lzQFqxf6Zk1oIg) |  [claudeai-modern-web-music-player](https://github.com/CharlesPikachu/musicdl/tree/master/examples/claudeai-modern-web-music-player)   |
+|  Music downloader GUI                          |   音乐下载器GUI界面                   |   [click](https://mp.weixin.qq.com/s/fN1ORyI6lzQFqxf6Zk1oIg) |  [musicdlgui](https://github.com/CharlesPikachu/musicdl/tree/master/examples/musicdlgui)                                               |
+|  Singer lyrics analysis                        |   歌手歌词分析                        |   [click](https://mp.weixin.qq.com/s/I8Dy7CoM2ThnSpjoUaPtig) |  [singerlyricsanalysis](https://github.com/CharlesPikachu/musicdl/tree/master/examples/singerlyricsanalysis)                           |
+|  Lyric-based song snippet retrieval            |   歌词获取歌曲片段                    |   [click](https://mp.weixin.qq.com/s/Vmc1IhuhMJ6C5vBwBe43Pg) |  [searchlyrics](https://github.com/CharlesPikachu/musicdl/tree/master/examples/searchlyrics)                                           |
 
-For example, the Music Downloader GUI looks/works like this,
+For example, the Modern Web Music Player (Claude.ai) looks/works like this,
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/CharlesPikachu/musicdl/master/examples/musicdlgui/screenshot.png" width="600" alt="musicdl logo" />
+  <img src="https://raw.githubusercontent.com/CharlesPikachu/musicdl/master/examples/claudeai-modern-web-music-player/screenshot.png" width="600" alt="musicdl logo" />
 </div>
 
 
